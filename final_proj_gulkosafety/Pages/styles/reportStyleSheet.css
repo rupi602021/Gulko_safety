@@ -1,0 +1,207 @@
+﻿#proj_bar {
+    text-align: right;
+    display: flex;
+}
+h1 {
+    direction: ltr;
+    margin-right: 50px;
+}
+body {
+    background-color: #eeeeee;
+    display: flex;
+    flex-direction: column;
+}
+
+.mainCards {
+    background-color: white;
+    margin-left: 50px;
+    margin-right: 50px;
+    margin-bottom:15px;
+    direction: rtl;
+    padding: 15px;
+}
+
+form {
+    display: inline;
+    margin: 0px;
+    padding: 0px;
+    font-size: 13px;
+}
+.form-group {
+    margin-bottom: 5px;
+    float:right;
+}
+.red-star{
+    color:red;
+}
+
+h1, .proj {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+    font-weight: bold;
+}
+h3 {
+    font-size: 20px;
+    font-weight: bold;
+    color: cadetblue;
+    padding-right: 15px;
+    margin-top: 0px;
+}
+.w3-container {
+    margin-top: 50px;
+    margin: 20px;
+    padding: 10px;
+}
+.w3-modal-content {
+    direction: rtl;
+}
+
+#btn_add_defect, #saveReport, #calcGrade, #addDefectToRBtn, #btn_update_defect, #savePicToDefBTN, #sendPdf, #downPdf {
+    float: left;
+    color: #fff;
+    margin-right:7px;
+    background-color: cadetblue;
+    border-color: cadetblue;
+}
+
+#saveReport {
+    margin-left: 15px;
+}
+
+.btn-success {
+    background-color: white;
+    color: black;
+    border: 3px solid #569366;
+    margin: 3px;
+}
+ .btn-success:hover {
+        background-color: #569366;
+        color: white;
+ }
+
+.btn-danger {
+    background-color: white;
+    color: black;
+    border: 3px solid #bd3636;
+    margin: 3px;
+}
+.btn-danger:hover {
+    background-color: #bd3636;
+    color: white;
+
+}
+#table{
+    padding-left:20px;
+    padding-right:20px;
+}
+#mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    margin: auto;
+    visibility: hidden;
+    z-index: -2;
+    background: #000;
+    background: rgba(0,0,0,0.8);
+    overflow: hidden;
+    opacity: 0;
+    transition: all .5s ease-in-out;
+}
+
+    #mask.showing {
+        opacity: 1;
+        z-index: 9000;
+        visibility: visible;
+        overflow: auto;
+        transition: all .5s ease-in-out;
+    }
+
+#boxes {
+    display: table;
+    width: 100%;
+    height: 100%;
+}
+
+.window {
+    max-width: 780px;
+    z-index: 9999;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    margin: auto;
+    background-color: #ffffff;
+    font-family: 'Segoe UI Light', sans-serif;
+    font-size: 15pt;
+}
+
+    .window img {
+        width: 100%;
+        height: auto;
+    }
+
+.inner {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+#popupfoot {
+    font-size: 16pt;
+}
+
+.showImage {
+    margin: 0 0 3em;
+    display: table;
+    text-align: center
+}
+
+    .showImage img {
+        display: block
+    }
+
+.hide-scroll, .hide-scroll body {
+    overflow: hidden !important
+}
+
+#editReportBTN, #updateReportBTN {
+    background-color: transparent;
+    border: 0px;
+}
+
+span.glyphicon.glyphicon-floppy-disk, span.glyphicon.glyphicon-pencil {
+    font-size: 20px;
+    top: 3px;
+}
+
+.editBtns{
+    text-align:left;
+}
+
+.editReportDetailsBtns {
+    position: relative;
+    margin: 0;
+    padding: 5px;
+    left: 0px;
+    top: 50px;
+}
+
+p {
+    text-align: right;
+    font-size:16px;
+    margin-right:25px;
+}
+#ReportGradeP {
+    text-align: right;
+    margin-right: 15px;
+    font-size: 18px;
+}
+
+#pdfAndSendBTN {
+    position: relative;
+    left: 50px;
+    top: 20px;
+}
+#logout {
+    border: unset;
+}

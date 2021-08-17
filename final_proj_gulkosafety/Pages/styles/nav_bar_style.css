@@ -1,0 +1,49 @@
+﻿.glyphicon {
+    top: 18px;
+    font-size: 16px;
+}
+
+.body-wrap {
+    justify-content: space-between;
+}
+
+div#navbarMenu {
+    background-color: cadetblue;
+    color: WHITE;
+    FONT-WEIGHT: bold;
+    border: 1px solid;
+    border-color: cadetblue;
+    font-family: 'Segoe UI';
+}
+
+.navbar-inverse .navbar-nav > .active > a, .navbar-inverse .navbar-nav > .active > a:focus, .navbar-inverse .navbar-nav > .active > a:hover {
+    color: cadetblue;
+    background-color: #eeeeee;
+    FONT-WEIGHT: bold;
+    border-color: cadetblue
+}
+
+.navbar-inverse .navbar-nav > li > a {
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.navbar-inverse {
+    background-color: cadetblue;
+    border: 0px solid;
+    border-color: cadetblue;
+}
+
+
+#logout {
+    float: right;
+    margin-top: 1%;
+    margin-right: 1%;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.navbar-collapse {
+    text-align: center;
+}

@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <script src="../Scripts/jquery-3.4.1.min.js"></script>
+    <script src="../Scripts/html2pdf.bundle.js"></script>
+    <!--//Email-->
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+    <!--//Email-->
+    <title>מייל</title>
+    <style type="text/css">
+        #Certificate {
+            border-color: black;
+            border: 1px solid;
+            display: flex;
+            flex-direction: column;
+            text-align: right;
+            margin-left: 1%;
+            margin-right: 1%;
+            padding-right: 7%;
+            margin-top: 4%;
+            padding-bottom: 5%
+        }
+
+        p, h1 {
+            font-family: Arial;
+        }
+
+        img {
+            width: 40%
+        }
+
+        #sig {
+            margin-right: 60%
+        }
+    </style>
+    <script>
+
+        function createCertificate() {
+            info = JSON.parse(localStorage["certipicateInfo"])
+            console.log(info)
+            str = ""
+            str += "<h1><u>" + info.Type_name + "</u></h1>"
+            str += "<p>,אנו גולקו בטיחות מצהירים כי לאחר שבקרנו במוסד-" + info.Company + "</p>"
+            str += "<p>,הממוקם בכתובת- " + info.Address + "</p>"
+            str += "<p>בתאריך: " + info.Check_date + "</p>"
+            str += "<p><b>.מאשרים בזאת, כי המקום עומד בכלל סידורי הבטיחות על-פי תקנות המשרד לבטיחות וגהות הקיימים בחוק  </b></p>"
+            str += "<br/><div id='sig'><p>,בכבוד</p>"
+            str += "<p> יעוץ וממונה בטיחות-Gulko safety</p></div>"
+            $("#Certificate").append(str)
+            makePdf()
+        }
+        function makePdf() {
+            var element = document.getElementById('allPage');
+            // name = info.Type_name + "- " + info.Company;
+            var opt = {
+                margin: 0,
+                filename: name + '.pdf',
+                pagebreak: { mode: 'avoid-all', before: '#page2el' },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+
+            };
+
+            html2pdf().set(opt).from(element).outputPdf('datauri').then(uri => {
+                sendEmail(uri)
+                //  showAfterPDF()
+            })
+
+        }
+        function sendEmail(uri) {
+            console.log(uri)
+            mail = "<p>היי</p>"
+            mail += "<p>" + info.Type_name + "</p>"
+
+
+            Email.send({
+                //Host: "smtp.google.com",
+                Host: "smtp.elasticemail.com",
+                Username: "esports.iesa44@gmail.com",
+                Password: "7CC84767D2FF1C146F7EEAFD7EB3CF71FD3B",
+
+                To: "giladgulko@gmail.com",
+                From: "gulkosafetyuser@gmail.com",
+                Subject: "Gulkosafety-אישור בטיחות",
+
+                Body: mail,
+                Attachments: [
+                    {
+                        name: info.Type_name+".pdf",
+                        data: uri
+                    }]
+
+            }).then(
+               alert("האישור נשלח")
+
+            );
+
+
+
+            return false;
+
+        }
+    </script>
+</head>
+<body id="allPage" onload="createCertificate()">
+    <div id="Certificate">
+
+        <img src="photos/logo.jpeg" />
+    </div>
+</body>
+</html>

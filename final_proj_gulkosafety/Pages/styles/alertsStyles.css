@@ -1,0 +1,265 @@
+﻿body {
+    background-color: #eeeeee;
+}
+.alerts {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+    font-weight: bold;
+}
+
+.projAlerts {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-weight: bold;
+}
+
+#alert_bar {
+    text-align: right;
+    display: flex;
+    margin-top: 15px;
+}
+
+#Alerts_div {
+    margin: auto;
+    width: 70%;
+    height: 100%;
+    background-color: white;
+}
+
+
+#active {
+    color: cadetblue;
+    background-color: #eeeeee;
+    FONT-WEIGHT: bold;
+    border-color: cadetblue;
+}
+.archiv {
+    color: black;
+    direction: rtl;
+    font-size: 20px;
+    padding:10px;
+}
+.alert-certificate {
+    color: #a94442;
+    background-color: #f2dede;
+    border-color: #ebccd1;
+    direction: rtl;
+    font-size: 20px;
+}
+
+.alert-Defective-repair{
+    color: #3c763d;
+    background-color: #dff0d8;
+    direction: rtl;
+    border-color: #d6e9c6;
+    font-size: 20px;
+}
+
+.alert-Defective-repair-decline {
+    color: #f72b2b;
+    background-color: rgba(249, 55, 55, 0.29);
+    direction: rtl;
+    border-color: rgba(248, 62, 62, 0.80);
+    font-size: 20px;
+}
+
+.alert-instruction  {
+    color: #31708f;
+    background-color: #d9edf7;
+    border-color: #bce8f1;
+    direction: rtl;
+    font-size: 20px;
+}
+.alert-Safety-level {
+    color: #ee822d;
+    background-color: rgba(243, 111, 17, 0.25);
+    direction: rtl;
+    font-size: 20px;
+}
+
+.alert-defect {
+    color: #b7a124;
+    background-color: #ffffbc;
+    border-color: #ffff1a;
+    direction: rtl;
+    font-size: 20px;
+}
+#archiv_alert_btn {
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+    margin-left: 87%;
+}
+    .alert-dismissable .close, .alert-dismissible .close {
+        width: 30px;
+        padding-right: 5px;
+        font-size: 30px;
+    }
+.separate {
+
+    background-color: #eeeeee;
+}
+.date {
+    font-size: 16px;
+    float: left;
+    direction: rtl;
+}
+.homeDate, .projDate {
+    font-size: 16px;
+    direction: rtl;
+}
+.archiv > .date {
+    font-size: 16px;
+    float: left;
+    direction: rtl;
+}
+
+#ph {
+    height: 50%;
+}
+
+img {
+    height: 5%;
+    width: 10%;
+    /*margin-right: 5%;*/
+}
+#pForm {
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-top: 5%;
+    text-align: right;
+    max-width: 80%;
+    margin-bottom: 5px;
+}
+th.sorting {
+    text-align: center;
+}
+th.sorting_asc {
+    text-align: center;
+}
+th {
+    text-align: right;
+}
+.w3-container, .w3-panel {
+    padding-right: 4%;
+    direction: rtl;
+    
+}
+
+#alert_paragraph {
+    padding: 2%;
+}
+
+    #alert_paragraph > p {
+        text-align: right;
+    }
+
+
+h3 {
+    font-size: 20px;
+    font-weight: bold;
+    color: cadetblue;
+    text-align: right;
+    margin-top: 0px;
+}
+
+/*algo alerts*/
+.algoHeader{
+    font-weight:bold;
+    font-size:18px;
+}
+
+.algoGoodFind {
+    background-color:rgba(226, 246, 210, 0.47);
+    font-size: 18px;
+}
+
+.algoBadFind {
+    background-color:rgba(248, 29, 29, 0.22);
+    font-size: 18px;
+}
+
+.algoRepAvg{
+    background-color:rgba(245, 236, 191, 0.75);
+}
+
+h2 {
+    color: cadetblue;
+}
+
+.grades{
+    color:black;
+}
+#logout{
+    border:unset;
+}
+
+
+#mask {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    margin: auto;
+    visibility: hidden;
+    z-index: -2;
+    background: #000;
+    background: rgba(0,0,0,0.8);
+    overflow: hidden;
+    opacity: 0;
+    transition: all .5s ease-in-out;
+}
+
+    #mask.showing {
+        opacity: 1;
+        z-index: 9000;
+        visibility: visible;
+        overflow: auto;
+        transition: all .5s ease-in-out;
+    }
+
+#boxes {
+    display: table;
+    width: 100%;
+    height: 100%;
+}
+
+.window {
+    max-width: 780px;
+    z-index: 9999;
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    margin: auto;
+    background-color: #ffffff;
+    font-family: 'Segoe UI Light', sans-serif;
+    font-size: 15pt;
+}
+
+    .window img {
+        width: 100%;
+        height: auto;
+    }
+
+.inner {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+#popupfoot {
+    font-size: 16pt;
+}
+
+.showImage {
+    margin: 0 0 3em;
+    display: table;
+    text-align: center
+}
+
+    .showImage img {
+        display: block
+    }
+
+.hide-scroll, .hide-scroll body {
+    overflow: hidden !important
+}

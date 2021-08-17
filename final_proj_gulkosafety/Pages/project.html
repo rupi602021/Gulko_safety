@@ -1,0 +1,792 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Suez+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@1,700&family=Suez+One&display=swap" rel="stylesheet">
+
+    <title>פרויקט</title>
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.4/raphael-min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/justgage/1.2.9/justgage.min.js"></script>
+    <script src="../Scripts/ajaxCallsWithKey.js"></script>
+    <link href="styles/alertsStyles.css" rel="stylesheet" />
+    <link href="styles/nav_bar_style.css" rel="stylesheet" />
+    <link href="styles/projectStyleSheet.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+    <script>
+
+        $(document).ready(function () {
+            reports = [];
+            projContacts = [];
+            projContactsTest = [];
+            projectTypes = [];
+            contactList = [];
+            user = JSON.parse(localStorage["user"]);
+            if (user.User_type_num == 2) {
+                userType2Mode();
+            }
+            managerSelect = document.getElementById('manager');
+            foremanSelect = document.getElementById('foreman');
+            projectTypeSelect = document.getElementById('projectType');
+
+            $("#projectDetailsForm").submit(saveProjForm);
+            $("#contactsDetailsForm").submit(saveContactForm);
+             
+            localStorage["userType"]=1
+            //get info from local storage
+            project = JSON.parse(localStorage["project"]);
+            contactList = JSON.parse(localStorage["contactList"]);
+            projectTypes = JSON.parse(localStorage["projectTypes"]);
+
+            getReports();
+            editProjBtnEvents();
+            renderProjectDetails();
+            renderProjContacts();
+            renderProjTypes();
+            getAlerts();
+        });
+        function userType2Mode() {
+            $(".type2mode").hide()
+
+        }
+        function getAlerts() {
+            let proj_num = project.Project_num;
+            let api = "../api/alert?proj_num=" + proj_num;
+            ajaxCall("GET", api, "", getAlertsSuccess, getAlertError);
+        }
+        function getAlertsSuccess(data) {
+            alertList = data;
+            for (i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_type_num == 1 && user.User_type_num == 1) {
+                    document.getElementById('alerts').innerHTML += "<div  class='projAlerts'> <p id='" + alertList[i].Alert_num + "' href='#' </p><strong class='projDate'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-tachometer-alt' style='font-size:24px'></i>&nbsp&nbsp<a id='" + alertList[i].Alert_num + "' href='#' onclick='renderSafetyAlert(this.id)'>סיכום עדכון רמת בטיחות פרויקט " + alertList[i].Proj_num + "</a></div> ";
+
+                }
+                if (alertList[i].Alert_type_num == 3) {
+                    if (user.User_type_num != 1 && alertList[i].Content.split(",")[0] == "תמונת תיקון ליקוי לא אושרה") {
+                        document.getElementById('alerts').innerHTML += "<div  class='projAlerts'> <p id='" + alertList[i].Alert_num + "' href='#' </p><strong class='projDate'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-tachometer-alt' style='font-size:24px'></i>&nbsp&nbsp<a id='" + alertList[i].Alert_num + "' href='#' onclick='renderDefectPic(this.id)'>" + alertList[i].Content.split(",")[0] + "</a ></div > ";
+                    }
+                    if( user.User_type_num != 1 && alertList[i].Content.split(",")[0] == "תמונת תיקון ליקוי אושרה") {
+                        document.getElementById('alerts').innerHTML += "<div  class='projAlerts'> <p id='" + alertList[i].Alert_num + "' href='#' </p><strong class='projDate'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-tachometer-alt' style='font-size:24px'></i>&nbsp&nbsp<a id='" + alertList[i].Alert_num + "' href='#' onclick='renderDefectPic(this.id)'>" + alertList[i].Content.split(",")[0] + "</a ></div > ";
+                    }
+                    else if (user.User_type_num == 1 && alertList[i].Content.split(",")[0] != "תמונת תיקון ליקוי לא אושרה" && alertList[i].Content.split(",")[0] != "תמונת תיקון ליקוי אושרה"){
+                        document.getElementById('alerts').innerHTML += "<div  class='projAlerts'> <p id='" + alertList[i].Alert_num + "' href='#' </p><strong class='projDate'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-tachometer-alt' style='font-size:24px'></i>&nbsp&nbsp<a id='" + alertList[i].Alert_num + "' href='#' onclick='renderDefectPic(this.id)'>" + alertList[i].Content.split(",")[0] + "</a ></div > ";
+                    }
+                }
+                
+            }
+        }
+        function renderSafetyAlert(id) {
+            document.getElementById('alert_paragraph').innerHTML = ""
+            document.getElementById('id04').style.display = 'block';
+            for (var i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_num == id) {
+
+                    $("#alert_paragraph").html(alertList[i].Content);
+                }
+
+            }
+
+        }
+
+        function renderDefectPic(alertNum) {
+            $('#mask').addClass('showing');
+            $('html').addClass('hide-scroll');
+            //var id = '#dialog';
+            var fullImagePath = "";
+            for (var i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_num == alertNum) {
+                    $('#alert_title').html(alertList[i].Content.split(",")[0]);
+                    fullImagePath = "../uploadedFiles/" + alertList[i].Content.split(",")[1];
+                    break;
+                }
+            }
+
+            $('.image').attr({
+                'src': fullImagePath
+            });
+
+            //if close button is clicked
+            $('.window .close').click(function (e) {
+                ////Cancel the link behavior
+                e.preventDefault();
+                $('#mask').removeClass('showing');
+                $('html').removeClass('hide-scroll');
+            });
+
+        }
+
+        function getAlertError() {
+            swal({
+                title: "נכשל!", text: "שגיאה במשיכת התראות!", type: "warning", icon: "warning"
+            });
+        }
+
+        function saveContactForm() {
+            updateProjContacts();
+            return false;
+        }
+
+        function updateProjContacts() {
+            let manager_email = $('#manager').val();
+            let foreman_email = $('#foreman').val();
+            let project_num = project.Project_num;
+
+            for (i = 0; i < contactList.length; i++) {
+                if (manager_email == contactList[i].Email)
+                    projContactsTest.push({ manager: contactList[i] });
+                if (foreman_email == contactList[i].Email)
+                    projContactsTest.push({ foreman: contactList[i] });
+            }
+
+            let proj = {
+                Project_num: project.Project_num,
+                Manager_email: manager_email,
+                Foreman_email: foreman_email
+            }
+
+
+            let api = "../api/project?project_num=" + project_num;
+            ajaxCall("PUT", api, JSON.stringify(proj), updateProjContactsSuccess, updateProjContactsError);
+        }
+
+        function updateProjContactsSuccess(data) {
+            alert("saved");
+            $(".groupContacts").prop('disabled', true);
+            $("#editContactsBTN").show();
+            $("#saveContactsBTN").hide();
+            $("#cancelEditContactsBTN").hide();
+            //update local storage
+            localStorage["projContacts"] = JSON.stringify(projContactsTest);
+        }
+        function updateProjContactsError(data) {
+            swal({
+                title: "נכשל!", text: "אנשי קשר לא עודכנו!", type: "warning", icon: "warning"
+            });
+        }
+
+        function saveProjForm() {
+            $("#dateError").hide();
+            var endDate = document.getElementById('endDate').value;
+            var startDate = document.getElementById('startDate').value;
+            if (startDate > endDate) {
+                $('#endDate').after('<p id="dateError">תאריך התחלה גדול מתאריך הסיום</p>');
+            }
+            else updateProject();
+
+            return false;
+        }
+
+        function updateProject() {
+            let projToEdit = {
+                Project_num: project.Project_num,
+                Name: $('#projectName').val(),
+                Company: $('#company').val(),
+                Address: $('#address').val(),
+                Start_date: $('#startDate').val().split("T")[0],
+                End_date: $('#endDate').val().split("T")[0],
+                Status: $('#status').val(),
+                Description: $('#description').val(),
+                Safety_lvl: project.Safety_lvl,
+                Project_type_num: $('#projectType').val(),
+                Manager_email: project.Manager_email,
+                Foreman_email: project.Foreman_email,
+                Delete_status: project.Delete_status
+            }
+            localStorage["project"] = JSON.stringify(projToEdit);
+            ajaxCall("PUT", "../api/project", JSON.stringify(projToEdit), updateProjectSuccess, updateProjectError);
+        }
+
+        function updateProjectSuccess(data) {
+            alert("saved");
+            $(".groupDetails").prop('disabled', true);
+            $("#editDetailsBTN").show();
+            $("#saveDetailsBTN").hide();
+            $("#cancelEditDetailsBTN").hide();
+        }
+
+        function updateProjectError() {
+            swal("נכשל!", "פרויקט לא עודכן!", "warning");
+        }
+
+        function editProjBtnEvents() {
+            $('#reportsTable').show();
+            $("#saveDetailsBTN").hide();
+            $("#saveContactsBTN").hide();
+            $("#cancelEditDetailsBTN").hide();
+            $("#cancelEditContactsBTN").hide();
+
+            $(".groupDetails").prop('disabled', true);
+            $(".groupContacts").prop('disabled', true);
+
+            //edit project details
+            $("#editDetailsBTN").on("click", function () {
+                $(".groupDetails").prop('disabled', false);
+                $("#projectNum").prop('disabled', true);
+                $("#editDetailsBTN").hide();
+                $("#saveDetailsBTN").show();
+                $("#cancelEditDetailsBTN").show();
+            });
+
+            //cancel edit project details
+            $("#cancelEditDetailsBTN").on("click", function () {
+                $(".groupDetails").prop('disabled', true);
+                $("#editDetailsBTN").show();
+                $("#saveDetailsBTN").hide();
+                $("#cancelEditDetailsBTN").hide();
+                renderProjectDetails();
+            });
+
+            // edit project contacts
+            $("#editContactsBTN").on("click", function () {
+                $(".groupContacts").prop('disabled', false);
+                $("#editContactsBTN").hide();
+                $("#saveContactsBTN").show();
+                $("#cancelEditContactsBTN").show();
+                renderContactList();
+            });
+
+            //cancel edit project contacts
+            $("#cancelEditContactsBTN").on("click", function () {
+                $(".groupContacts").prop('disabled', true);
+                $("#editContactsBTN").show();
+                $("#saveContactsBTN").hide();
+                $("#cancelEditContactsBTN").hide();
+                renderProjContacts();
+            });
+
+            //reports table BTNs
+            $(document).on("click", ".editBtn", function () {
+                markSelected(this);
+                reportNum = this.getAttribute('data-reportId');
+                reportToEdit = "";
+                for (var i = 0; i < reports.length; i++) {
+                    if (reports[i].Report_num == reportNum) {
+                        reportToEdit = reports[i];
+                    }
+                }
+                console.log(reportToEdit);
+                localStorage["report"] = JSON.stringify(reportToEdit);
+                localStorage["projContacts"] = JSON.stringify(projContacts);
+                localStorage["userType"] = JSON.stringify(user.User_type_num);
+                window.location = "report.html"
+            });
+            //reports table BTNs
+            $(document).on("click", ".deleteBtn", function () {
+                markSelected(this);
+                var report_num = this.getAttribute('data-reportId');
+                swal({ // this will open a dialouge
+                    title: "האם אתה בטוח שברצונך למחוק את הדוח??",
+                    text: "",
+                    icon: "warning",
+                    buttons: true,
+                    dangerMode: true
+                }).then(function (willDelete) {
+                    if (willDelete) DeleteReport(report_num);
+                    else swal("המחיקה בוטלה!");
+                });
+            });
+
+            //new report btn
+            $("#newBTN").on("click", function () {
+                localStorage["report"] = "";
+                localStorage["projContacts"] = JSON.stringify(projContacts);
+                window.location = "report.html";
+            });
+        }
+
+        function renderContactList() {
+            for (i = 0; i < contactList.length; i++) {
+                if (project.Manager_email != contactList[i].Email) {
+                    managerSelect.innerHTML += "<option value=" + contactList[i].Email + ">" + contactList[i].Name + ", " + contactList[i].Phone + "</option > ";
+                }
+                if (project.Foreman_email != contactList[i].Email) {
+                    foremanSelect.innerHTML += "<option value=" + contactList[i].Email + ">" + contactList[i].Name + ", " + contactList[i].Phone + " </option>";
+                }
+
+            }
+        }
+
+        function renderProjTypes() {
+            projectType = document.getElementById('projectType');
+            for (i = 0; i < projectTypes.length; i++) {
+                projectType.innerHTML += "<option value=" + projectTypes[i].Project_type_num + ">" + projectTypes[i].Project_type_name + "</option>";
+            }
+            $('#projectType').val(project.Project_type_num);
+        }
+
+        function renderProjContacts() {
+
+            for (i = 0; i < contactList.length; i++) {
+                if (project.Manager_email == contactList[i].Email) {
+                    projContacts.push(contactList[i]);
+                    managerSelect.innerHTML += "<option value=" + contactList[i].Email + ">" + contactList[i].Name + ", " + contactList[i].Phone + "</option > ";
+                }
+                if (project.Foreman_email == contactList[i].Email) {
+                    foremanSelect.innerHTML += "<option value=" + contactList[i].Email + ">" + contactList[i].Name + ", " + contactList[i].Phone + " </option>";
+                    projContacts.push(contactList[i]);
+                }
+            }
+
+        }
+
+        // Delete a report from the server
+        function DeleteReport(report_num) {
+            let api = "../api/report?report_num=" + report_num;
+            ajaxCall("DELETE", api, "", deleteReportSuccess, deleteReportError);
+        }
+
+
+        // success callback function after delete report
+        function deleteReportSuccess(data) {
+            swal({
+                title: "מצוין!", text: "הדוח נמחק בהצלחה!", type:
+                    "success", icon: "success"
+            }).then(function () {
+                location.reload();
+            }
+                );
+        }
+        function deleteReportError() {
+            swal({
+                title: "נכשל!", text: "דוח לא נמחק!", type: "warning", icon: "warning"
+            });
+        }
+
+        // mark the selected row
+        function markSelected(btn) {
+            $("#reportsTable tr").removeClass("selected"); // remove seleced class from rows that were selected before
+            row = (btn.parentNode).parentNode; // button is in TD which is in Row
+            row.className = 'selected'; // mark as selected
+        }
+
+        function renderProjectDetails() {
+            $('.proj').text('');
+            $('.proj').append(project.Name);
+            $('#projectNum').val(project.Project_num);
+            $('#projectName').val(project.Name);
+            $('#status').val(project.Status);
+            $('#startDate').val(project.Start_date.split("T")[0]);
+            $('#endDate').val(project.End_date.split("T")[0]);
+            $('#company').val(project.Company);
+            $('#address').val(project.Address);
+            $('#description').val(project.Description);
+            $('#g1').empty();
+            var g1 = new JustGage({
+                id: 'g1',
+                value: project.Safety_lvl,
+                min: 0,
+                max: 100,
+                pointer: true,
+                gaugeWidthScale: 0.6,
+                relativeGaugeSize: true,
+                levelColors: ['#CE1B21', '#D0532A', '#FFC414', '#85A137'],
+                counter: true
+                //customSectors: { range: [{ color: "red", lo: 0, hi: 50 }, { color: "yellow", lo: 51, hi: 69.9 }, { color: "green", lo: 70, hi: 94.9 }, { color: "darkgreen", lo: 95, hi: 100 }] },
+
+            });
+        }
+        function getReports() {
+            let proj_num = project.Project_num;
+            let api = "../api/report?proj_num=" + proj_num;
+            ajaxCall("GET", api, "", getReportsSuccess, getReportError);
+        }
+        function getReportError() {
+            swal({
+                title: "נכשל!", text: "שגיאה במשיכת דוחות!", type: "warning", icon: "warning"
+            });
+        }
+
+
+        function getReportsSuccess(data) {
+            reports = data;
+            let gradesArr = [];
+            let reportNumArr = [];
+            let reportsToShow = [];
+            for (i = 0; i < reports.length; i++) {
+                gradesArr.push(reports[i].Grade);
+                reportNumArr.push(reports[i].Report_num);
+                let r = {
+                    Report_num: reports[i].Report_num,
+                    Date: reports[i].Date.split("T")[0],
+                    Time: reports[i].Time.split("T")[1],
+                    Grade: reports[i].Grade
+                }
+                reportsToShow.push(r);
+            }
+
+            try {
+                tbl = $('#reportsTable').DataTable({
+                    data: reportsToShow,
+                    pageLength: 5,
+                    //responsive: true,
+                    columns: [
+                        { data: "Report_num" },
+                        { data: "Date" },
+                        { data: "Time" },
+                        { data: "Grade" },
+                        {
+                            render: function (data, type, row, meta) {
+                                let dataReport = "data-reportId='" + row.Report_num + "'";
+                                if (user.User_type_num == 2) {
+                                    editBtn = "<button type='button' class = 'editBtn btn btn-success' " + dataReport + "> צפייה בדוח </button>";
+                                    return editBtn
+                                }
+                                else {
+                                    editBtn = "<button type='button' class = 'editBtn btn btn-success' " + dataReport + "> צפייה ועריכת  דוח </button>";
+                                    deleteBtn = "<button type='button' class = 'deleteBtn btn btn-danger' " + dataReport + "> מחק </button>";
+                                    return editBtn + deleteBtn;
+                                }
+
+                            }
+                        }
+                    ],
+                });
+
+            }
+
+            catch (err) {
+                alert(err);
+            }
+            localStorage["gradesArr"] = JSON.stringify(gradesArr);
+            buildGradesGraph(gradesArr, reportNumArr);
+            if (reports != "") {
+                localStorage["allReports"] = JSON.stringify(reports);
+            }
+            else localStorage["allReports"] = "";
+
+        }
+
+        function buildGradesGraph(gradesArr, reportNumArr) {
+            if (reportNumArr.length > 0) {
+                var trace1 = {
+                    x: reportNumArr,
+                    y: gradesArr,
+                    type: 'scatter'
+                };
+
+                var data = [trace1];
+                var config = { responsive: true }
+                Plotly.newPlot('chartContainer', data,config);
+            }
+        }
+        function logout() {
+            localStorage.removeItem("user");
+            window.location = "login.html";
+
+        }
+
+    </script>
+</head>
+<body>
+    <div id="logo">
+        <img class="logo" src="photos/logo.jpeg" height="50" />
+        <button onclick="logout()" id="logout">התנתקות</button>
+    </div>
+    <div class="body-wrap">
+        <nav class="navbar navbar-inverse">
+            <div class="container1">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarMenu" aria-expanded="false">
+                        <span id="navigation" class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" id="navbarMenu">
+                    <ul class="nav navbar-nav navbar-right  bts-nav">
+                        <li><span class="glyphicon glyphicon-cog" aria-hidden="true"></span><a href="settings.html"></a></li>
+                        <li></li>
+                        <li class="nav-item">
+                            <span class="glyphicon glyphicon-bell" aria-hidden="true"></span><a href="alerts.html"></a>
+                        </li>
+
+                        <li class="type2mode"><a href="users.html">משתמשים</a></li>
+                        <li class="type2mode"><a href="orders.html">הזמנות</a></li>
+                        <li class="type2mode"><a href="certificates.html">אישורים</a></li>
+                        <li class="type2mode"><a href="instructions.html">הדרכות</a></li>
+                        <li class="active"><a href="projects.html">פרויקטים<span class="sr-only">(current)</span></a></li>
+                        <li class="type2mode">
+                            <span class="glyphicon glyphicon-home" aria-hidden="true"></span><a href="home.html"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!--NavBar-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <div id="proj_bar" dir="rtl">
+        <div id="headline">
+            <h1 class="proj"></h1>
+        </div>
+    </div>
+    <div id="main">
+        <div class="row">
+            <div class="col-lg-8 mb-3">
+                <div class="card">
+                    <div class="card-body section1">
+                        <form id="projectDetailsForm" onsubmit="return false">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <h3>פרטי הפרויקט</h3>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-sm-6">
+                                    <label for="projectName"><span class="red-star">★ </span>שם הפרויקט</label>
+                                    <input type="text" class="form-control groupDetails" id="projectName"
+                                           oninvalid="this.setCustomValidity('הכנס שם פרויקט')"
+                                           oninput="this.setCustomValidity('')" required>
+                                </div>
+
+
+                                <div class="form-group col-sm-4">
+                                    <label for="projectType"><span class="red-star">★ </span>סוג הפרויקט</label>
+                                    <select class="form-control groupDetails" id="projectType" required></select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-sm-4">
+                                    <label for="projectNum">מס' פרויקט</label>
+                                    <input type="text" class="form-control groupDetails" id="projectNum">
+                                </div>
+
+
+                                <div class="form-group col-sm-4">
+                                    <label for="status"><span class="red-star">★ </span>סטאטוס</label>
+                                    <select class="form-control groupDetails" id="status" required>
+                                        <option value="">בחר סטאטוס</option>
+                                        <option value="1"> פתוח </option>
+                                        <option value="0"> סגור </option>
+                                    </select>
+                                </div>
+
+
+                                <div class="form-group col-sm-4">
+                                    <label for="startDate"><span class="red-star">★ </span>תאריך התחלה</label>
+                                    <br />
+                                    <input type="date" class="groupDetails" id="startDate" required>
+                                </div>
+
+
+                            </div>
+
+                            <div class="row">
+
+                                <div class="form-group col-sm-4">
+                                    <label for="company"><span class="red-star">★ </span>חברה</label>
+                                    <input type="text" class="form-control groupDetails" id="company" required>
+                                </div>
+
+                                <div class="form-group col-sm-4">
+                                    <label for="address"><span class="red-star">★ </span>כתובת</label>
+                                    <input type="text" class="form-control groupDetails" id="address" required>
+                                </div>
+
+
+                                <div class="form-group col-sm-4">
+                                    <label for="endDate"><span class="red-star">★ </span>תאריך סיום</label>
+                                    <br />
+                                    <input type="date" class="groupDetails" id="endDate" required>
+                                </div>
+
+                            </div>
+                            <div class="row">
+                                <div class="form-group col-sm-8">
+                                    <label for="description">תיאור</label>
+                                    <textarea rows="4" class="form-control groupDetails" id="description" placeholder="הזן תיאור פרויקט"></textarea>
+                                </div>
+                                <div class="form-group col-sm-4 editLocation">
+                                    <p class="editLocation">
+                                        <button type="button" id="editDetailsBTN" class="btn btn-default btn-sm type2mode">
+                                            <span class="glyphicon glyphicon-pencil"></span>
+                                        </button>
+                                        <button type="submit" id="saveDetailsBTN" class="btn btn-default btn-sm">
+                                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                                        </button>
+                                        <button type="button" id="cancelEditDetailsBTN" class="btn btn-default btn-sm">
+                                            בטל עריכה
+                                        </button>
+                                    </p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-3">
+                <div class="card">
+                    <div class="card-body section1">
+                        <div class="row">
+                            <div class="form-group col-sm-12">
+                                <h3>רמת בטיחות פרויקט</h3>
+                            </div>
+                        </div>
+                        <div class="flexbox">
+                            <div class="box">
+                                <div id="g1" class="gauge"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-8 mb-3">
+                <div class="card">
+                    <div class="card-body section2">
+                        <form id="contactsDetailsForm" onsubmit="return false">
+                            <div class="row">
+                                <div class="form-group col-sm-6">
+                                    <h3>אנשי קשר</h3>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="form-group col-sm-6">
+                                    <label for="manager"><span class="red-star">★ </span>מנהל פרויקט</label>
+                                    <select class="form-control groupContacts" id="manager" required></select>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <label for="foreman"><span class="red-star">★ </span>מנהל עבודה</label>
+                                    <select class="form-control groupContacts" id="foreman" required></select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="form-group col editLocation">
+                                    <p class="editLocation">
+                                        <button type="button" id="editContactsBTN" class="btn btn-default btn-sm type2mode">
+                                            <span class="glyphicon glyphicon-pencil"></span>
+                                        </button>
+                                        <button type="submit" id="saveContactsBTN" class="btn btn-default btn-sm">
+                                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                                        </button>
+                                        <button type="button" id="cancelEditContactsBTN" class="btn btn-default btn-sm">
+                                            בטל עריכה
+                                        </button>
+                                    </p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-3">
+                <div class="card">
+                    <div class="card-body section2">
+                        <div class="row">
+                            <div class="col">
+                                <h3>התראות</h3>
+                            </div>
+                        </div>
+                        <div id="alerts">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-8 mb-3">
+                <div class="card">
+                    <div class="card-body section3">
+                        <div class="row">
+                            <div id="report_header" class="col-sm-6">
+                                <h3>דוחות ביקור</h3>
+                            </div>
+                            <div id="report_BTN" class="col-sm-6">
+                                <button class='btn btn-primary type2mode' id="newBTN">דוח ביקור חדש</button>
+                            </div>
+                        </div>
+                        <form id="pForm">
+                            <div id="table">
+                                <table id="reportsTable" class="display" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th>מספר דוח</th>
+                                            <th>תאריך</th>
+                                            <th>שעה</th>
+                                            <th>ציון דוח</th>
+
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                </table>
+
+                            </div>
+                        </form>
+                    </div>
+                    
+              </div>
+              </div>
+                        <div class="col-lg-4 mb-3">
+                            <div class="card">
+                                <div class="card-body section3">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h3>ציוני דוחות</h3>
+                                        </div>
+                                    </div>
+                                        <div id="chartContainer">
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+        <div class="w3-container">
+            <div id="id04" class="w3-modal">
+                <div class="w3-modal-content">
+                    <div class="w3-container">
+                        <span onclick="document.getElementById('id04').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+                        <div id="alert_paragraph"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="mask">
+            <div id="boxes">
+                <div class="inner">
+                    <div id="dialog" class="window">
+                        <a href="#" class="close">x</a>
+                        
+                        <div id="showImg">
+                            <p id="alert_title"></p>
+                            <div id="popupfoot"> <img src="#" class="image" alt="Loading..." /> </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

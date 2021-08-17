@@ -1,0 +1,1149 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Suez+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@1,700&family=Suez+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCallsWithKey.js"></script>
+    <link href="styles/reportStyleSheet.css" rel="stylesheet" />
+    <link href="styles/nav_bar_style.css" rel="stylesheet" />
+    <link href="styles/alertsStyles.css" rel="stylesheet" />
+    <!---->
+    <script src="../Scripts/html2pdf.bundle.js"></script>
+    <!--//Email-->
+    <script src="https://smtpjs.com/v3/smtp.js"></script>
+    <!--//Email-->
+  
+
+    <title>דוח ביקור</title>
+
+    <script>
+        defects = [];
+        defects_types = [];
+        currentReportDefects = [];
+        lastReportDefects = [];
+        allReports = [];
+        defectToEdit = "";
+        ptwList = [];
+        userType = JSON.parse(localStorage["userType"]);
+        Users = JSON.parse(localStorage["projContacts"]);
+        pdf = "";
+        uriToSend = ""
+        $(document).ready(function () {
+            //build view page
+            if (userType != 1)
+                viewOnlyPageBtn();
+
+            bringDataFromLocal();
+            getDefectsAndTypeS();
+
+            //forms submit event
+            $("#reportDetailsForm").submit(saveNewReport);
+            $("#defectForm").submit(addDefectToReport);
+
+            //get all weight by project type.
+            getProjTypeWeights();
+
+            $('#savePicToDefBTN').on('click', function () {
+                var data = new FormData();
+                var files = document.getElementById('img').files;
+
+                // Add the uploaded file to the form data collection
+                if (files.length > 0) {
+                    for (f = 0; f < files.length; f++) {
+                        data.append("UploadedImage", files[f]);
+                    }
+                    data.append("name", "benny"); // append what ever data you want to send along with the files. See how you extract it in the controller.
+                }
+
+                // Ajax upload
+                $.ajax({
+                    type: "POST",
+                    url: "../Api/FileUpload",
+                    contentType: false,
+                    processData: false,
+                    data: data,
+                    success: updateImageLink,
+                    error: updateImgError
+                });
+
+                return false;
+            });
+
+        });
+
+
+        function getProjTypeWeights() {
+            let api = "../api/proj_type_weight?proj_type=" + project.Project_type_num;
+            ajaxCall("GET", api, "", getPTWSuccess, getPTWError);
+        }
+
+        function getPTWSuccess(ptwList1) {
+            ptwList = ptwList1
+        }
+        function getPTWError(err) {
+            swal("משיכת משקלים לפי סוג פרויקט נכשלה!", err, "warning");
+        }
+
+
+        function viewOnlyPageBtn() {
+            $(".form-control").prop('disabled', true);
+            $("#addDefectToRBtn").hide();
+            $("#calcGrade").hide();
+            $('.fixBTNs').hide();
+            $('.editReportDetailsBtns').hide();
+            $('.type2mode').hide();
+            $('#sendPdf').hide();
+
+
+        }
+
+        function bringDataFromLocal() {
+            project = JSON.parse(localStorage["project"]);
+            renderProjectDetails();
+
+            //editing report
+            if (localStorage["report"] != "") {
+                //editing mode for admin- ממונה בטיחות
+                if (userType == 1) {
+                    editReportPageBtnEvents();
+                }
+
+                $("#saveNewReport").hide();
+                $('#sendPdf').show();
+                $('#calcAndSend').show();
+                $(".groupDetails").prop('disabled', true);
+
+                renderReportDetails();
+                getReportDefect(report.Report_num);
+            }
+            //new report
+            else {
+                headLine = "<h1>דוח ביקור חדש</h1>";
+                $('#proj_bar').html(headLine);
+                $("#defectsTBL").hide();
+                $("#lastReportdefectsTBL").hide();
+                $('.editReportDetailsBtns').hide();
+                $('#sendPdf').hide();
+                $('#downPdf').hide();
+                $('#calcAndSend').hide();
+            }
+        }
+
+        function renderReportDetails() {
+            report = JSON.parse(localStorage["report"]);
+            if (localStorage["allReports"] != "") {
+                allReports = JSON.parse(localStorage["allReports"]);
+                if (report.Report_num < allReports[allReports.length - 1].Report_num) {
+                    $("#calcGrade").hide();
+                    $("#addDefectToRBtn").hide();
+                }
+            }
+
+            headLine = "<h1>" + report.Report_num + " דוח ביקור " + "</h1>";
+            time = report.Time.split('T');
+            date = report.Date.split('T');
+            $('#Date').val(date[0]);
+            $('#time').val(time[1]);
+            $('#comments').val(report.Comment);
+            $('#proj_bar').html(headLine);
+            $("#ReportGradeP").html(report.Grade);
+        }
+
+        function editReportPageBtnEvents() {
+            $('#editReportBTN').show();
+            $('.cancelUpdateReportBtns').hide();
+
+            //edit report details
+            $("#editReportBTN").on("click", function () {
+                $('#editReportBTN').hide();
+                $(".groupDetails").prop('disabled', false);
+                $('.cancelUpdateReportBtns').show();
+            });
+
+            //cancel edit report details
+            $("#cancelEditBTN").on("click", function () {
+                $(".cancelUpdateReportBtns").hide();
+                $(".groupDetails").prop('disabled', true);
+                $("#editReportBTN").show();
+                renderReportDetails();
+            });
+        }
+
+        function checkLastReportDefects() {
+            if (localStorage["allReports"] != "") {
+                let api = "../api/defect_in_report?proj_num=" + project.Project_num + "&reportDate=" + report.Date.split('T');
+                ajaxCall("GET", api, "", getLastRDefectSuccess, getLastRDefectError);
+            }
+            else $("#lastReportdefectsTBL").hide();
+        }
+        function getLastRDefectSuccess(defects) {
+            lastReportDefects = defects;
+            if (lastReportDefects != "") {
+                let notFixeDefects = [];
+                for (i = 0; i < lastReportDefects.length; i++) {
+                    if (lastReportDefects[i].Fix_status == 0)
+                        notFixeDefects.push(lastReportDefects[i]);
+                }
+                if (notFixeDefects.length > 0) {
+                    let tableID = "#lastReportTable";
+                    createDt(notFixeDefects, tableID);
+                }
+                else $("#lastReportdefectsTBL").hide();
+            }
+            else $("#lastReportdefectsTBL").hide();
+        }
+        function getLastRDefectError(err) {
+            swal("משיכת ליקויים מהדוח האחרון נכשלה!", err, "warning");
+        }
+
+        function getNewReportsuccess(report) {
+
+            headLine = "<h1>" + report.Report_num + " דוח ביקור " + "</h1>";
+            $('#proj_bar').html(headLine);
+        }
+
+        function getReportDefect(reportNum) {
+            let api = "../api/defect_in_report?report_num=" + reportNum;
+            ajaxCall("GET", api, "", getReportDefSuccess, getReportDefError);
+        }
+
+        function getReportDefSuccess(defects) {
+            currentReportDefects = defects;
+            $("#defectsTBL").show();
+            let tableID = "#defectTable";
+            createDt(defects, tableID);
+            checkLastReportDefects();
+        }
+
+        function getReportDefError(err) {
+            swal("משיכת ליקויי הדוח הנוכחי נכשלה!", err, "warning");
+        }
+
+        function renderProjectDetails() {
+            $('#company').val(project.Company);
+            $('#location').val(project.Address);
+            let projUsers = JSON.parse(localStorage["projContacts"]);
+            $('#forman').val(projUsers[0].Name + ", " + projUsers[0].Phone);
+            $('#projManeger').val(projUsers[1].Name + ", " + projUsers[1].Phone);
+        }
+
+        function editDefectImg(defect) {
+            defectToEdit = defect;
+            $('#showImg').hide();
+            $('.image').hide();
+            $("#uploadImg").show();
+            $('#mask').addClass('showing');
+            $('html').addClass('hide-scroll');
+            var id = '#dialog';
+
+            //if close button is clicked
+            $('.window .close').click(function (e) {
+                ////Cancel the link behavior
+                e.preventDefault();
+
+                $('#mask').removeClass('showing');
+                $('html').removeClass('hide-scroll');
+            });
+
+        }
+
+        function updateImageLink(data) {
+            let picture_link = data[0].split("/");
+            picture_link = picture_link[2];
+            let temp = JSON.parse(defectToEdit);
+            temp.Picture_link = picture_link;
+            let api = "../api/testDinR?picture_link=" + picture_link;
+            ajaxCall("PUT", api, JSON.stringify(temp), updateLinkSuccess, updateImgLinkError);
+        }
+
+
+
+        function updateLinkSuccess(data) {
+            swal({
+                title: "מצוין!", text: "תמונה הועלתה בהצלחה", type: "success", icon: "success"
+            }).then(function () {
+                location.reload();
+
+            });
+            var now = new Date();
+            now.setHours(now.getHours() + 3);
+            now.toISOString();
+            newAlertOnAprroveIMG = {
+                Content: "הועלתה תמונה חדשה לליקוי בדוח-  " + report.Report_num + "," + data.Picture_link,
+                Date: now,
+                Alert_type_num: 3,
+                User_email: "gulkosafety@gmail.com",
+                Status: 0,
+                Proj_num: project.Project_num
+
+            }
+            let api1 = "../api/alert";
+            ajaxCall("POST", api1, JSON.stringify(newAlertOnAprroveIMG), PostAlertSuccess, PostAlertError);
+        }
+
+        function updateImgLinkError(data) {
+            alert("לינק התמונה לא הועלה לשרת");
+            location.reload();
+        }
+
+        function updateImgError(err) {
+            alert("תמונה לא נשמרה");
+        }
+
+        function checkImg(def) {
+            $('.image').attr({
+                'src': ""
+            });
+            defectToEdit = JSON.parse(def);
+            $('#uploadImg').hide();
+            $('#mask').addClass('showing');
+            $('html').addClass('hide-scroll');
+            var id = '#dialog';
+            var fullImagePath = "../uploadedFiles/" + defectToEdit.Picture_link;
+            $('.image').attr({
+                'src': fullImagePath
+            });
+
+            //if close button is clicked
+            $('.window .close').click(function (e) {
+                ////Cancel the link behavior
+                e.preventDefault();
+                $('#mask').removeClass('showing');
+                $('html').removeClass('hide-scroll');
+            });
+        }
+
+        function createDt(defectsdata, tableID) {
+
+            for (i = 0; i < defectsdata.length; i++) {
+                defectsdata[i].Fix_date = defectsdata[i].Fix_date.split("T")[0];
+                defectsdata[i].Fix_time = defectsdata[i].Fix_time.split("T")[1];
+            }
+
+            try {
+                tbl = $(tableID).DataTable({
+                    data: defectsdata,
+                    pageLength: 8,
+                    responsive: true,
+                    columns: [
+                        { data: "Defect_num" },
+                        { data: "Defect_type_name" },
+                        { data: "Defect_name" },
+                        { data: "Description" },
+                        { data: "Fix_date" },
+                        { data: "Fix_time" },
+                        {
+                            render: function (data, type, row, meta) {
+                                if (row.Fix_status == 1) {
+                                    let sta = "<p style='color: green'>תוקן<p>"
+                                    return sta
+                                }
+                                else {
+                                    let sta = "<p style='color: red'>לא תוקן<p>"
+                                    return sta
+                                }
+                            }
+                        },
+                        {
+                            render: function (data, type, row, meta) {
+                                if (row.Picture_link != "") {
+                                    let def = JSON.stringify(row);
+                                    editBtn = "<button type='button' class = 'picBtn btn btn-success' value='" + def + "' onclick='checkImg(this.value)'> צפה בתמונה </button>";
+                                    return editBtn;
+                                }
+                                else {
+                                    let def = JSON.stringify(row);
+                                    editBtn = "<button type='button' class = 'picBtn btn btn-success' value='" + def + "' disabled> תמונה חסרה </button>";
+                                    return editBtn;
+                                }
+
+
+                            }
+                        },
+
+                        {
+                            render: function (data, type, row, meta) {
+                                let def = JSON.stringify(row);
+                                if (userType == 1) {
+                                    editBtn = "<button type='button' class = 'editBtn btn btn-success' value='" + def + "' onclick='editDefectBTN(this.value)'> עריכה </button>";
+                                    deleteBtn = "<button type='button' class = 'deleteBtn btn btn-danger' value='  " + def + "' onclick='deleteAlert(this.value)'> מחיקה </button>";
+                                    return editBtn + deleteBtn;
+                                }
+                                else {
+                                    editBtn = "<button type='button' class = 'editBtn btn btn-success' value='  " + def + "' onclick='editDefectImg(this.value)'> ערוך תמונת ליקוי </button>";
+                                    return editBtn;
+                                }
+
+
+                            }
+                        },
+
+                    ],
+                });
+
+            }
+
+            catch (err) {
+                alert(err);
+            }
+
+        }
+
+        function editDefectBTN(def) {
+            defectToEdit = JSON.parse(def);
+            document.getElementById('id01').style.display = 'block';
+            $("#selectType").empty();
+            $("#selectdefect").empty();
+            $("#selectType").append("<option value='" + defectToEdit.Defect_num + "' > " + defectToEdit.Defect_type_name + "</option > ");
+            $("#selectdefect").append("<option value='" + defectToEdit.Defect_num + "' > " + defectToEdit.Defect_name + "</option>");
+            $("#selectType").prop('disabled', true);
+            $("#selectdefect").prop('disabled', true);
+            $("#fixDate").val(defectToEdit.Fix_date.split("T")[0]);
+            $("#fixTime").val(defectToEdit.Fix_time);
+            $("#description").val(defectToEdit.Description);
+            $("#fixStatus").val(defectToEdit.Fix_status);
+            $("#btn_update_defect").show();
+            $("#btn_add_defect").hide();
+        }
+        function upDateDefect() {
+            update_defect = {
+                Report_num: defectToEdit.Report_num,
+                Defect_num: $("#selectdefect").val(),
+                Fix_Date: $("#fixDate").val(),
+                Fix_Time: $("#fixTime").val(),
+                Fix_status: $("#fixStatus").val(),
+                Description: $("#description").val()
+            }
+
+            console.log(update_defect)
+            let api = "../api/defect_in_report";
+            ajaxCall("PUT", api, JSON.stringify(update_defect), updateDefectsInReportSuccess, updateDefectsInReportError)
+        }
+        function updateDefectsInReportSuccess() {
+            swal({
+                title: "מצוין!", text: "ליקוי עודכן בהצלחה", type: "success", icon: "success"
+            }).then(function () {
+                location.reload();
+
+            });
+        }
+        function updateDefectsInReportError(err) {
+            swal("הליקוי לא עודכן! נסה שוב מאוחר יותר", err, "warning")
+        }
+        function getDefectsAndTypeS() {
+            api = "../api/defect"
+            ajaxCall("GET", api, "", getDefectsSuccess, getDefectsError)
+
+            api1 = "../api/defect_type"
+            ajaxCall("GET", api1, "", getDefectsTypeSuccess, getDefectsTypeError)
+        }
+        function getDefectsSuccess(data) {
+            defects = data;
+            console.log(defects)
+        }
+        function getDefectsTypeSuccess(data) {
+            defects_types = data;
+            console.log(defects_types)
+        }
+        function getDefectsError(err) {
+            swal("משיכת ליקויים נכשלה!", err, "warning");
+        }
+        function getDefectsTypeError(err) {
+            swal("משיכת סוגי ליקויים נכשלה!", err, "warning");
+        }
+        function newDefect() {
+            $("#btn_update_defect").hide();
+            $("#btn_add_defect").show();
+            $("#selectType").empty();
+            $("#selectdefect").empty();
+            $("#selectType").prop('disabled', false);
+            $("#selectdefect").prop('disabled', false);
+            str = "<option>סוגי ליקויים</option>"
+            for (var i = 0; i < defects_types.length; i++) {
+                str += "<option value='" + defects_types[i].Defect_type_num + "'>" + defects_types[i].Type_name + "</option>"
+            }
+            $("#selectType").html(str);
+            $("#fixDate").val("");
+            $("#fixTime").val("");
+            $("#description").val("");
+            $("#fixStatus").val("");
+        }
+        function createDefectList(value) {
+            str = "<option>ליקויים</option>"
+            for (var i = 0; i < defects.length; i++) {
+                if (defects[i].Defect_type_num == value) {
+                    str += "<option value='" + defects[i].Defect_num + "'>" + defects[i].Name + "</option>"
+                }
+
+            }
+            $("#selectdefect").html(str);
+        }
+        function addDefectToReport() {
+
+            New_defect = {
+                Report_num: report.Report_num,
+                Defect_num: $("#selectdefect").val(),
+                Fix_Date: $("#fixDate").val(),
+                Fix_Time: $("#fixTime").val(),
+                Picture_link: "",
+                Fix_status: 0,
+                Description: $("#description").val()
+            }
+            console.log(New_defect)
+            api = "../api/defect_in_report";
+            ajaxCall("POST", api, JSON.stringify(New_defect), postDefectInReportSuccess, postDefectInReportError)
+
+        }
+        function postDefectInReportSuccess() {
+            swal({
+                title: "מצוין!", text: "הליקוי נוסף בהצלחה לדוח", type:
+                    "success", icon: "success"
+            }).then(function () {
+                location.reload();
+            }
+            );
+        }
+        function postDefectInReportError(err) {
+            swal("הליקוי לא נוסף לדוח!", err, "warning");
+
+        }
+        function deleteAlert(def) {
+            defectToEdit = JSON.parse(def);
+            swal({
+                title: "האם אתה בטוח שברצונך למחוק את הדוח?",
+                text: "",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true
+            })
+                .then(function (willDelete) {
+                    if (willDelete) delete_defect_in_report(defectToEdit);
+                    else swal("הדוח לא נמחק!");
+                });
+        }
+        function delete_defect_in_report(def) {
+
+            defectToDelete = {
+                Report_num: def.Report_num,
+                Defect_num: def.Defect_num
+            }
+            ajaxCall("DELETE", "../api/defect_in_report", JSON.stringify(defectToDelete), deleteDefectSuccess, deleteDefectError);
+        }
+        function deleteDefectSuccess() {
+            swal({
+                title: "מצוין!", text: "הליקוי נמחק בהצלחה", type: "success", icon: "success"
+            }).then(function () {
+                location.reload();
+
+            });
+        }
+
+        function deleteDefectError(err) {
+            swal("הליקוי לא נמחק!", err, "warning");
+        }
+
+        function saveNewReport() {
+            //date validation
+            $("#dateError").hide();
+            let date = $('#Date').val();
+            if (date < project.Start_date || date > project.End_date) {
+                $('#Date').after('<p id="dateError">התאריך מחוץ לתאריכי הפרויקט</p>');
+            }
+            else {
+                //case update details
+                if (localStorage["report"] != "") {
+                    //save to db
+                    let reportToSave = {
+                        Report_num: report.Report_num,
+                        Date: $('#Date').val(),
+                        Time: $('#time').val(),
+                        Comment: $('#comments').val()
+                    }
+                    ajaxCall("PUT", "../api/report", JSON.stringify(reportToSave), updateReportSuccess, updateReportError);
+                }
+                //case new report
+                else {
+                    let reportToSave = {
+                        Date: $('#Date').val(),
+                        Time: $('#time').val(),
+                        Comment: $('#comments').val(),
+                        Grade: 100,
+                        Project_num: project.Project_num,
+                        User_mail: "gulkosafety@gmail.com"//change in the future - from local storage- user loged in
+                    }
+                    ajaxCall("POST", "../api/report", JSON.stringify(reportToSave), insertReportSuccess, getError);
+                }
+
+            }
+            return false;
+
+        }
+        function getError(arr) {
+            console.log(arr)
+        }
+        function updateReportSuccess() {
+            swal({
+                title: "מצוין!", text: "הדוח עודכן בהצלחה", type: "success", icon: "success"
+            }).then(function () {
+                //update local storage with new info
+                report.Date = $('#Date').val();
+                report.Time = $('#time').val();
+                report.Comment = $('#comments').val();
+                localStorage["report"] = JSON.stringify(report);
+                $(".groupDetails").prop('disabled', true);
+                $('#editReportBTN').show();
+                $('.cancelUpdateReportBtns').hide();
+
+            });
+
+        }
+        function updateReportError(err) {
+            swal("עדכון הדוח נכשל!", err, "warning");
+        }
+
+        function insertReportSuccess() {
+            swal("מצוין!", "הדוח נוסף בהצלחה! הוסף ליקויים", "success")
+            let api = "../api/report/" + project.Project_num + "/lastReport";
+            ajaxCall("GET", api, "", getLastReportSuccess, getLastReportError);
+        }
+
+        function getLastReportSuccess(lastReport) {
+            localStorage["report"] = JSON.stringify(lastReport);
+            location.reload();
+        }
+
+        function getLastReportError(err) {
+            swal("הבאת פרטי הדוח נכשלה!", err, "warning");
+        }
+
+        function calcGrade() {
+            //להוסיף את הליקויים הפתוחים
+            let curentReport = [];
+            for (i = 0; i < defects.length; i++) {
+                for (j = 0; j < currentReportDefects.length; j++) {
+                    if (currentReportDefects[j].Defect_num == defects[i].Defect_num && i < 181) {
+                        let defect = {
+
+                            Defect_num: currentReportDefects[j].Defect_num,
+                            Defect_name: defects[i].Name,
+                            Defect_type_num: defects[i].Defect_type_num,
+                            Defect_type_name: currentReportDefects[j].Defect_type_name,
+                            Grade: defects[i].Grade
+                        }
+                        curentReport.push(defect);
+                    }
+                }
+            }
+
+            gradesArr = JSON.parse(localStorage["gradesArr"]);
+            gradesArr.pop();
+            document.getElementById('id02').style.display = 'block';
+
+            let safetyLevel = {
+                ReportNum: report.Report_num,
+                Project: project,
+                CurrentReportDefects: curentReport,
+                PreviousReportDefects: lastReportDefects,
+                ProjReportGrades: gradesArr,
+                ProjTypeWeights: ptwList
+            }
+            let api = "../api/safety_level";
+            ajaxCall("PUT", api, JSON.stringify(safetyLevel), getSafetyLvlSuccess, getSafetyLvlError);
+
+        }
+
+        function getSafetyLvlSuccess(safetyLvl) {
+            $("#safetyAlert").html(safetyLvl.Alert);
+            $("#ReportGradeP").html(safetyLvl.ReportGrade);
+            project.Safety_lvl = safetyLvl.SafetyLvlGrade;
+            localStorage["project"] = JSON.stringify(project);
+            alertConstractor(safetyLvl.Alert, 1, "gulkosafety@gmail.com", project.Project_num);
+        }
+
+        function getSafetyLvlError(err) {
+            alert("something went wrong");
+        }
+
+        function alertConstractor(content, alert_type_num, user_email, proj_num) {
+            var now = new Date().toISOString();
+            new_alert = {
+                Content: content,
+                Date: now,
+                Alert_type_num: alert_type_num,
+                User_email: user_email,
+                Status: 0,
+                Proj_num: proj_num
+            }
+            ajaxCall("POST", "../api/alert", JSON.stringify(new_alert), insertAlertSuccess, insertAlertError);
+        }
+
+        function insertAlertSuccess() {
+            console.log("התראה נשמרה");
+        }
+
+        function insertAlertError() {
+            console.log("התראה לא נשמרה");
+        }
+
+        function getPTWSuccess(ptwList1) {
+            ptwList = ptwList1
+            console.log(ptwList)
+        }
+
+        function updateDefectStatus() {
+            $('#mask').removeClass('showing');
+            $('html').removeClass('hide-scroll');
+
+            defectToEdit.Fix_status = 1;
+            console.log(defectToEdit);
+            let api = "../api/defect_in_report";
+            ajaxCall("PUT", api, JSON.stringify(defectToEdit), postAlertOnImg, updateDefectsInReportError);
+        }
+        function updateDefectImgSuccess() {
+            location.reload();
+            //-יצירת התראה-להשלים
+        }
+        function postAlertOnImg() {
+
+            for (var i = 0; i < Users.length; i++) {
+                var now = new Date().toISOString();
+                newAlertOnAprroveIMG = {
+                    Content: "תמונת תיקון ליקוי אושרה," + defectToEdit.Picture_link,
+                    Date: now,
+                    Alert_type_num: 3,
+                    User_email: Users[i].Email,
+                    Status: 0,
+                    Proj_num: project.Project_num
+
+                }
+                let api = "../api/alert";
+                ajaxCall("POST", api, JSON.stringify(newAlertOnAprroveIMG), PostAlertSuccess, PostAlertError)
+
+            }
+
+
+        }
+        function PostAlertSuccess() {
+            location.reload();
+        }
+        function PostAlertError(err) {
+            console.log(err)
+        }
+        function defectNotApprove() {
+            var now = new Date().toISOString();
+            for (var i = 0; i < Users.length; i++) {
+                newAlertOnAprroveIMG = {
+                    Content: "תמונת תיקון ליקוי לא אושרה," + defectToEdit.Picture_link,
+                    Date: now,
+                    Alert_type_num: 3,
+                    User_email: Users[i].Email,
+                    Status: 0,
+                    Proj_num: project.Project_num
+
+                }
+                let api = "../api/alert";
+                ajaxCall("POST", api, JSON.stringify(newAlertOnAprroveIMG), PostAlertSuccess, PostAlertError)
+            }
+
+        }
+        function topdf(num) {
+            var element = document.getElementById('allPage');
+            name = 'report-' + report.Report_num + '.pdf';
+            var opt = {
+                margin: 0,
+                filename: 'report-' + report.Report_num + '.pdf',
+                pagebreak: { mode: 'avoid-all', before: '#page2el' },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+
+            };
+            if (num == 1) {
+                //html2pdf(element,opt);
+                window.open("reportToPdf.html", "_blank")
+
+            }
+            else {
+                html2pdf().set(opt).from(element).outputPdf('datauri').then(uri => {
+                    sendEmail(uri, name)
+                    //  showAfterPDF()
+                })
+            }
+
+
+            console.log(worker)
+
+        }
+
+        function showAfterPDF() {
+            $("#sendPdf").show()
+            $("#downPdf").show()
+            $("#logout").show()
+            $(".body-wrap").show()
+            $(".logo").show()
+        }
+
+        function changeUser() {
+            if (userType == 1) {
+                localStorage["userType"] = 2
+            }
+            else {
+                localStorage["userType"] = 1
+
+            }
+            location.reload()
+
+        }
+
+        function sendEmail(uri, name) {
+            console.log(uri)
+            mail = "<p>היי</p>"
+            mail += "<p>עלה דוח חדש לאתר בפרוייקט-" + project.Name + "</p>"
+            mail += "<a href='http://proj.ruppin.ac.il/igroup60/test2/A/tar5/Pages/projects.html'>כניסה למערכת</a>"
+
+            Email.send({
+                Host: "smtp.google.com",
+                Username: "esports.iesa44@gmail.com",
+                Password: "7CC84767D2FF1C146F7EEAFD7EB3CF71FD3B",
+
+                To: "giladgulko@gmail.com",
+                From: "gulkosafetyuser@gmail.com",
+                Subject: "דוח חדש באתר",
+
+                Body: mail,
+                Attachments: [
+                    {
+                        name: name,
+                        data: uri
+                    }]
+
+            }).then(
+                alert("מעולה!")
+
+            );
+
+            showAfterPDF()
+
+            return false;
+
+        }
+        function goto() {
+            alert('hii')
+        }
+        function logout() {
+            localStorage.removeItem("user");
+            window.location = "login.html";
+
+        }
+
+    </script>
+
+</head>
+<body>
+    
+        <div id="logo">
+            <img class="logo" src="photos/logo.jpeg" height="50" />
+            <button onclick="logout()" id="logout">התנתקות</button>
+        </div>
+        <div class="body-wrap">
+            <nav class="navbar navbar-inverse">
+                <div class="container1">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarMenu" aria-expanded="false">
+                            <span id="navigation" class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+                    <div class="collapse navbar-collapse" id="navbarMenu">
+                        <ul class="nav navbar-nav navbar-right  bts-nav">
+                            <li><span class="glyphicon glyphicon-cog" aria-hidden="true"></span><a href="settings.html"></a></li>
+                            <li></li>
+                            <li class="nav-item">
+                                <span class="glyphicon glyphicon-bell" aria-hidden="true"></span><a href="alerts.html"></a>
+                            </li>
+                            <li class="type2mode"><a href="users.html">משתמשים</a></li>
+                            <li class="type2mode"><a href="orders.html">הזמנות</a></li>
+                            <li class="type2mode"><a href="certificates.html">אישורים</a></li>
+                            <li class="type2mode"><a href="instructions.html">הדרכות</a></li>
+                            <li class="active"><a href="projects.html">פרויקטים<span class="sr-only">(current)</span></a></li>
+                            <li class="type2mode">
+                                <span class="glyphicon glyphicon-home" aria-hidden="true"></span><a href="home.html"></a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <!--NavBar-->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <div class="row">
+            <div id="pdfAndSendBTN" class="col-sm-2">
+                <button id="downPdf" class="btn btn-primary" onclick="topdf(1)">הורד דוח</button>
+                <button id="sendPdf" class="btn btn-primary type2mode" onclick="topdf(2)">שלח לבעלי עניין</button>
+            </div>
+            <div id="proj_bar" class="col-sm-10" dir="rtl">
+
+            </div>
+        </div>
+        <div id="allPage">
+            <!--פרטי דוח-->
+            <div id="reportDetails" class="mainCards">
+                <form id="reportDetailsForm" onsubmit="return false">
+                    <div class="row">
+                        <div class="form-group col-sm-4">
+                            <label for="company">שם חברה</label>
+                            <input type="text" class="form-control" id="company" disabled>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label for="tDate"><span class="red-star">★</span>תאריך ביקור</label>
+                            <br />
+                            <input type="date" id="Date" class="form-control groupDetails" required>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label for="projManeger">מנהל פרויקט</label>
+                            <input type="text" class="form-control" id="projManeger" disabled>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-sm-4">
+                            <label for="location">מיקום</label>
+                            <input type="text" class="form-control" id="location" disabled>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label for="time"><span class="red-star">★</span>שעה</label>
+                            <br />
+                            <input type="time" id="time" class="form-control groupDetails" required>
+                        </div>
+                        <div class="form-group col-sm-4">
+                            <label for="forman">מנהל עבודה</label>
+                            <input type="text" class="form-control" id="forman" disabled>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-sm-8">
+                            <label for="comments">הערות</label>
+                            <textarea rows="2" class="form-control groupDetails" id="comments" placeholder="הזן הערות לדוח"></textarea>
+                        </div>
+                        <div class="form-group col-sm-4 editReportDetailsBtns">
+                            <p class="editBtns">
+                                <button type="button" id="editReportBTN" class="btn btn-default btn-sm">
+                                    <span class="glyphicon glyphicon-pencil"></span>
+                                </button>
+                                <button type="button" id="updateReportBTN" class="btn btn-default btn-sm cancelUpdateReportBtns" onclick="saveNewReport()">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span>
+                                </button>
+                                <button type="button" id="cancelEditBTN" class="btn btn-default btn-sm cancelUpdateReportBtns">
+                                    בטל עריכה
+                                </button>
+                            </p>
+                        </div>
+                    </div>
+                    <div id="saveNewReport" class="row">
+                        <button type="submit" id="saveReport" class="btn btn-primary">שמור</button>
+                    </div>
+
+                </form>
+            </div>
+            <div id="mask">
+                <div id="boxes">
+                    <div class="inner">
+                        <div id="dialog" class="window">
+                            <a href="#" class="close">x</a>
+                            <form method="post" enctype="multipart/form-data" id="formUpload">
+                                <div id="uploadImg" class="row" dir="rtl">
+                                    <div class="col-12">
+                                        <h3>העלה תמונה לליקוי:</h3>
+                                    </div>
+                                    <br />
+                                    <div class="col-12">
+                                        <input type="file" id="img" />
+                                    </div>
+                                    <div class="col-12">
+                                        <button id="savePicToDefBTN" class="btn btn-primary">שמור</button>
+                                    </div>
+                                </div>
+                            </form>
+                            <div id="showImg">
+                                <div id="popupfoot"> <img src="#" class="image" alt="Loading..." /> </div>
+                                <button class="btn btn-danger fixBTNs" onclick="defectNotApprove()">ליקוי לא תוקן</button>
+                                <button class="btn btn-success fixBTNs" onclick="updateDefectStatus()">אשר תקינות ליקוי</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--last report defect table-->
+            <div id="lastReportdefectsTBL" class="mainCards">
+                <div class="row">
+                    <div id="allDefectsFixed" class="col-sm-6">
+                    </div>
+                    <div class="col-sm-6">
+                        <h3>ליקויים שלא תוקנו מהביקור הקודם:</h3>
+                    </div>
+                </div>
+                <br />
+                <br />
+                <div id="table1">
+                    <table id="lastReportTable" class="display" style="width:100%" dir="rtl">
+                        <thead>
+                            <tr>
+
+                                <th>מספר</th>
+                                <th>סוג</th>
+                                <th>שם</th>
+                                <th>תיאור</th>
+                                <th>תאריך תיקון</th>
+                                <th>שעת תיקון</th>
+                                <th>סטטוס</th>
+                                <th>תמונה</th>
+
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                    </table>
+                </div>
+            </div>
+            <!--טבלת ליקויים-->
+            <div id="defectsTBL" class="mainCards">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <button id="addDefectToRBtn" class="btn btn-primary" onclick="document.getElementById('id01').style.display='block',newDefect()">הוסף ליקוי לדוח </button>
+                    </div>
+                    <div class="col-sm-6">
+                        <h3>ליקויים שנמצאו באתר ובסביבתו:</h3>
+                    </div>
+                </div>
+                <br />
+                <br />
+                <div id="table">
+                    <table id="defectTable" class="display" style="width:100%" dir="rtl">
+                        <thead>
+                            <tr>
+
+                                <th>מספר</th>
+                                <th>סוג</th>
+                                <th>שם</th>
+                                <th>תיאור</th>
+                                <th>תאריך תיקון</th>
+                                <th>שעת תיקון</th>
+                                <th>סטטוס</th>
+                                <th>תמונה</th>
+
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                    </table>
+
+                </div>
+            </div>
+            <div id="calcAndSend" class="mainCards">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <button id="calcGrade" class="btn btn-primary" onclick="calcGrade()">חשב ציון דוח</button>
+                    </div>
+                    <div class="col-sm-6">
+                        <h3>ציון דוח:</h3>
+                        <p id="ReportGradeP"></p>
+                    </div>
+                </div>
+            </div>
+            <!--כל החלק מתחת הוא החלון שנפתח ברגע שלוחצים על הוסף ליקוי חדש לדוח-->
+            <div class="w3-container">
+                <div id="id01" class="w3-modal">
+                    <div class="w3-modal-content">
+                        <div class="w3-container">
+                            <span onclick="document.getElementById('id01').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+                            <br />
+                            <br />
+                            <form id="defectForm" onsubmit="return false">
+                                <div class="row">
+                                    <div class="form-group col-sm-4">
+                                        <label for="defect_type"><span class="red-star">★</span>בחר סוג ליקוי</label>
+                                        <select id="selectType" class="form-control" onchange="createDefectList(this.value)" required></select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-sm-10">
+                                        <label for="defect_type"><span class="red-star">★</span>בחר ליקוי</label>
+                                        <select id="selectdefect" class="form-control" style="max-width:-webkit-fill-available;" required></select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-sm-4">
+                                        <label for="fixDate"><span class="red-star">★</span>תאריך תיקון</label>
+                                        <br />
+                                        <input type="date" id="fixDate" class="form-control" required>
+                                    </div>
+                                    <div class="form-group col-sm-4">
+                                        <label for="fixTime"><span class="red-star">★</span>עד שעה</label>
+                                        <br />
+                                        <input type="time" id="fixTime" class="form-control" required>
+                                    </div>
+
+                                    <div class="form-group col-sm-4">
+                                        <label for="status">סטאטוס</label>
+                                        <select class="form-control" id="fixStatus">
+                                            <option value="">בחר סטאטוס</option>
+                                            <option value="1"> תוקן </option>
+                                            <option value="0"> לא תוקן </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="form-group col-sm-10">
+                                        <label for="description">תיאור</label>
+                                        <input type="text" class="form-control" id="description" placeholder="הזן תיאור ">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <p>
+                                        <button type="submit" id="btn_add_defect" class="btn btn-primary">הוסף ליקוי</button>
+
+                                    </p>
+                                </div>
+                            </form>
+                            <div class="row">
+                                <p>
+
+                                    <button id="btn_update_defect" class="btn btn-primary" onclick="upDateDefect()"> עדכן ליקוי</button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="w3-container">
+                <div id="id02" class="w3-modal">
+                    <div class="w3-modal-content">
+                        <div class="w3-container">
+                            <span onclick="document.getElementById('id02').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+                            <div id="safetyAlert"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</body>
+    </html>

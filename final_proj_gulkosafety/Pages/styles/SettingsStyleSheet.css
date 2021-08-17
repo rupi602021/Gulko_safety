@@ -1,0 +1,166 @@
+﻿.btn-group button {
+    background-color: cadetblue; /*Green background */
+    border: 1px solid black; /* Green border */
+    color: white; /* White text */
+    padding: 10px 24px; /* Some padding */
+    cursor: pointer; /* Pointer/hand icon */
+    width: 100%; /* Set a width if needed */
+    display: block; /* Make the buttons appear below each other */
+}
+.btn-primary {
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+    float:right;
+}
+h2, h1 {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+    font-weight: bold;
+}
+    .btn-group button:not(:last-child) {
+        border-bottom: none; /* Prevent double borders */
+}
+
+/* Add a background color on hover */
+    .btn-group button:hover {
+        background-color: #5bbabd;
+    }
+#select_item {
+    background-color: #5bbabd;
+}
+.btn-group, .btn-group-vertical {
+    
+    vertical-align: middle;
+    width: 90%;
+    float: right;
+  
+}
+#headline {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+}
+#new_defect_type_headline, #new_defect_headline, #new_instruction_type_headline, #new_user_type_headline, #new_certificate_type_headline, #new_item_headline {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+}
+#buttons {
+    margin-top: 45px;
+    margin-right: 70px;
+}
+#table {
+    margin-top: 30px;
+    padding-left: 12%;
+    padding-right: 30%;
+    text-align: center;
+}
+.dataTables_wrapper {
+    position: relative;
+    clear: both;
+    *zoom: 1;
+    zoom: 1;
+    
+}
+
+.pForm {
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-top: 5%;
+}
+
+.form-group {
+    margin-bottom: 5px;
+    text-align: right;
+    max-width: 80%;
+}
+
+th {
+    text-align: right;
+}
+th.sorting {
+        text-align: center;
+
+}
+button#myBtn {
+    float: left;
+    margin-right: 15%;
+}
+#active {
+    color: cadetblue;
+    background-color: #eeeeee;
+    FONT-WEIGHT: bold;
+    border-color: cadetblue;
+}
+
+.btn-success {
+    background-color: white;
+    color: black;
+    border: 3px solid #569366;
+    margin: 3px;
+}
+
+    .btn-success:hover {
+        background-color: #569366;
+        color: white;
+    }
+
+.btn-danger {
+    background-color: white;
+    color: black;
+    border: 3px solid #bd3636;
+    margin: 3px;
+}
+
+.btn-danger:hover {
+        background-color: #bd3636;
+        color: white;
+    }
+body {
+    background-color: #eeeeee;
+}
+.red-star, #dateError {
+    color: red;
+}
+
+#saveBTN, #saveBTN_item, #saveBTN_defect_type, #saveBTN_certificate_type, #saveBTN_user_type, #saveBTN_instruction_type, #btn_update_defect_type, #btn_update_defect, #btn_update_instruction_type, #btn_update_user_type, #btn_update_certificate_type, #btn_update_item, #saveBTN1 {
+    float: left;
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+}
+#logout {
+    border: unset;
+}
+.activeColor {
+    background-color: darkgrey !important;
+}
+.deactiveColor {
+    background-color: cadetblue !important;
+}
+#personalUserDiv {
+    background-color: white;
+    width: 50%;
+    height: 33%;
+    margin-left: 25%;
+    padding: 2.5%
+}
+.btn_personal_user{
+    float:left;
+}
+#update_personal_user {
+    font-family: 'Suez One', serif;
+    color: cadetblue;
+text-align:right;
+}
+#errorPassword {
+    color: red;
+    text-align: right;
+}
+#personal_user_headline, #headline_setting {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: cadetblue;
+    font-weight: bold;
+    margin-top: 3%;
+    margin: 20px 10px 0;
+}
+

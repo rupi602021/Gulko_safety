@@ -1,0 +1,139 @@
+﻿#cert_bar {
+    text-align: center;
+    display: flex;
+    margin-top: 40px
+}
+
+#headline {
+    font-family: 'Suez One', serif;
+    color: blue;
+}
+
+#header {
+    height: 100px;
+    width: 100%;
+    text-align: center
+}
+
+#search {
+    display: flex;
+    height: 60%;
+    margin: auto
+}
+
+#table {
+    margin-top: 30px;
+    padding-left: 12%;
+    padding-right: 12%;
+    text-align: center;
+}
+
+#pForm {
+    margin-left: 10%;
+    margin-right: 10%;
+    margin-top: 5%;
+}
+
+.form-group {
+    margin-bottom: 5px;
+    text-align: right;
+    max-width: 80%;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+}
+
+h1, h2, h1.proj, h3 {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+    font-weight: bold;
+}
+
+body {
+    background-color: #eeeeee;
+}
+
+.btn-success {
+    background-color: white;
+    color: black;
+    border: 3px solid #569366;
+    margin: 3px;
+}
+
+    .btn-success:hover {
+        background-color: #569366;
+        color: white;
+    }
+.btn-show {
+    background-color: white;
+    color: black;
+    border: 3px solid #eeb414;
+    margin: 3px;
+}
+
+    .btn-show:hover {
+        background-color: #eeb414;
+        color: white;
+    }
+.btn-pdf {
+    background-color: white;
+    color: black;
+    border: 3px solid #00216f;
+    margin: 3px;
+}
+
+    .btn-pdf:hover {
+        background-color: #00216f;
+        color: white;
+    }
+
+
+.btn-danger {
+    background-color: white;
+    color: black;
+    border: 3px solid #bd3636;
+    margin: 3px;
+}
+
+    .btn-danger:hover {
+        background-color: #bd3636;
+        color: white;
+    }
+
+th.sorting {
+    text-align: center;
+}
+
+#buttons {
+    margin-top: 45px;
+    margin-right: 70px;
+}
+
+.red-star, #dateError {
+    color: red;
+}
+
+th {
+    text-align: right;
+}
+#saveBTN, #btn_update_cert, #btnSave_new_contact, #saveContactsBTN {
+    float: left;
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+}
+#btnUpdate_contact {
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+}
+#logout {
+    border: unset;
+}
+
+.w3-container, .w3-panel {
+    padding: 4%;
+}

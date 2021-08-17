@@ -1,0 +1,865 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Suez+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@1,700&family=Suez+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <link href="styles/nav_bar_style.css" rel="stylesheet" />
+    <link href="styles/certificatesStyleSheet.css" rel="stylesheet" />
+
+    <script src="../Scripts/ajaxCallsWithKey.js"></script>
+    <title>אישורים</title>
+    <script>
+        certificateTypeList = [];
+        certToEdit = [];
+        AllContacts = [];
+        contactList = [];
+        certificatedata = [];
+        var firstTimeAddContact = 1;
+        var cert_num = "";
+        var user_mail = "gulkosafety@gmail.com";
+        mode = "";
+
+        $(document).ready(function () {
+            getCertificateTypeList();
+            getCertData();
+            getcontacts();
+            $("#btn_update_cert").hide();
+            $("#contactsTable").hide();
+            $("#newContact").hide();
+            $("#newCertForm").submit(saveNewCert);
+            $("#updateContactForm").submit(updateContact);
+        });
+
+        //get a list of all the certificate type for section list
+        function getCertificateTypeList() {
+            let api = "../api/certificate_type";
+            ajaxCall("GET", api, "", getCertificateTypeListSuccess, getCertificateTypeListError);
+        }
+        function getCertificateTypeListSuccess(data) {
+            certificateTypeList = data;
+            renderCertificateType();
+        }
+        function getCertificateTypeListError() {
+            swal("Failed!", "Failed to read the Certificate Type!", "warning")
+        }
+        //רינדור של כל סוגי אישורים לתוך רשימה
+        function renderCertificateType() {
+            certTypeSelect = document.getElementById('certificateType');
+            for (i = 0; i < certificateTypeList.length; i++) {
+                certTypeSelect.innerHTML += "<option value=" + certificateTypeList[i].Type_name + ">" + certificateTypeList[i].Type_name + "</option>";
+            }
+        }
+        // קריאת כל אנשי הקשר
+        function getcontacts() {
+            let api = "../api/contact";
+            ajaxCall("GET", api, "", getContactSuccess, getContactError);
+        }
+
+        function getContactSuccess(data) {
+            renderContacts(data);
+        }
+
+        // רינדור של כל אנשי הקשר לרשימה
+        function renderContacts(data) {
+            AllContacts = data;
+        }
+        function getContactError() {
+            swal("נכשל!", "קריאת אנשי קשר נכשלה!", "warning")
+
+        }
+
+        function getCertData() {
+
+            ajaxCall("GET", "../api/certificate", "", createDt, getError)
+        }
+
+        function getError() {
+            swal("Failed!", "Failed to read the certificates!", "warning")
+        }
+
+        //שמירת איש קשר קיים לאישור חדש
+        function SaveExistContact() {
+            let contactId = $("#searchContact1").val();
+            for (var i = 0; i < AllContacts.length; i++) {
+                if (contactId == AllContacts[i].Id) {
+                    contact1 = {
+                        Id: AllContacts[i].Id,
+                        Full_name: AllContacts[i].Full_name,
+                        Phone: AllContacts[i].Phone,
+                        Mail: AllContacts[i].Mail,
+
+                    }
+                    SaveNewcontact(contact1)
+                }
+            }
+
+        } 
+
+        // שמירת איש קשר באישור חדש ורנדור לטבלה 
+        function SaveNewcontact(contact1) {
+
+            $("#newContact").hide();
+            $("#contactsTable").show();
+            let contactToShow = [];
+            if (contact1 == null) {
+                contact = {
+                    Id: $("#contact_id").val(),
+                    Full_name: $("#contact_name").val(),
+                    Phone: $("#contact_phone").val(),
+                    Mail: $("#contact_mail").val(),
+
+                }
+                contactToShow.push(contact);
+                contactList.push(contact);
+
+                let api = "../api/contact";
+                ajaxCall("POST", api, JSON.stringify(contact), createNewcontactSuccess, createNewcontactError);
+            }
+            else {
+                contactToShow.push(contact1);
+                contactList.push(contact1);
+            }
+
+            try {
+                if (firstTimeAddContact == 1) {
+                    tbl = $('#contactsTable').DataTable({
+                        data: contactToShow,
+                        pageLength: 10,
+                        responsive: true,
+                        columns: [
+
+                            { data: "Id" },
+                            { data: "Full_name" },
+                            { data: "Phone" },
+                            { data: "Mail" },
+
+                        ],
+                    });
+                    firstTimeAddContact = 0;
+                }
+                else {
+                    alert("You already add contact!")
+                }
+            }
+
+            catch (err) {
+                alert(err);
+            }
+
+        }
+        function createNewcontactSuccess(data) {
+            swal({
+                title: "מצוין!", text: "הוספת איש קשר בוצע בהצלחה!", type: "success", icon: "success"
+            })
+            new_cert();
+        }
+        function createNewcontactError() {
+            swal("נשכל!", "הוספת איש קשר נכשל!", "warning")
+        }
+
+        // יצירת טבלת אישורים
+        function createDt(data) {
+            certificatedata = data;
+            let certificatesToShow = [];
+            for (var i = 0; i < certificatedata.length; i++) {
+                certificatedata[i].Date = certificatedata[i].Date.split("T")[0];
+                if (certificatedata[i].Delete_status == 0) {
+                    c = {
+
+                        Certificate_num: certificatedata[i].Certificate_num,
+                        Type_name: certificatedata[i].Type_name,
+                        Company: certificatedata[i].Company,
+                        Check_date: certificatedata[i].Date,
+                        Description: certificatedata[i].Description,
+                        Address: certificatedata[i].Address,
+                        Certificate_status: certificatedata[i].Certificate_status,
+                        Pay_status: certificatedata[i].Pay_status,
+                        Price: certificatedata[i].Price,
+                        Invoice_num: certificatedata[i].Invoice_num,
+                    }
+                    certificatesToShow.push(c);
+                }
+            }
+            try {
+                tbl = $('#certTable').DataTable({
+                    data: certificatesToShow,
+                    pageLength: 10,
+                    responsive: true,
+                    columns: [
+
+                        { data: "Certificate_num" },
+                        { data: "Type_name" },
+                        { data: "Company" },
+                        { data: "Check_date" },
+                        { data: "Description"},
+                        { data: "Address" },
+                        {
+                            render: function (data, type, row, meta) {
+                                if (row.Certificate_status == 1) {
+                                    let status = "<p style='color: green'>עבר</p>"
+                                    return status
+                                }
+                                else {
+                                    let status = "<p style='color: red'>לא עבר</p>"
+                                    return status
+                                }
+                            }
+                        },
+                        { data: "Invoice_num" },
+                        {
+                            render: function (data, type, row, meta) {
+                                if (row.Pay_status == 1) {
+                                    let status_pay = "<p style='color: green'>שולם</p>"
+                                    return status_pay
+                                }
+                                else {
+                                    let status = "<p style='color: red'>לא שולם</p>"
+                                    return status
+                                }
+                            }
+                        },
+                        { data: "Price" },
+                        {
+                            render: function (data, type, row, meta) {
+                                let def = JSON.stringify(row); 
+
+                                editBtn = "<button type='button' class = 'editBtn btn btn-success' value='" + def + "' onclick='editcertBTN(this.value)'> עריכה </button>"; 
+
+                                deleteBtn = "<button type='button' class = 'deleteBtn btn btn-danger' value='" + def + "' onclick='deleteCertificate(this.value)'> מחיקה </button>";
+
+                                showBtn = "<button type='button' class = 'showBtn btn btn-show' value='" + def + "' onclick='showContact(this.value)'>  הצג איש קשר </button>";
+
+                                pdfBtn = "<button type='button' class = 'pdfBtn btn btn-pdf' value='" + def + "' onclick='certificate2PDF(this.value)'> הורדת אישור </button>";
+
+                                return editBtn + deleteBtn + showBtn + pdfBtn ;
+
+
+                            }
+                        },
+
+                    ],
+                });
+
+            }
+
+            catch (err) {
+                alert(err);
+            }
+        }
+
+        //יצירת אישור בPDF
+        function certificate2PDF(info) {
+            
+            window.open("cetrificatePdfPage.html", '_blank')
+            localStorage["certipicateInfo"] = info  
+        }
+        function sendPdf2Mail(info) {
+            
+            window.open("cetrificatePdf2mailPage.html", '_blank')
+        }
+        // כפתור הצג איש קשר
+        function showContact(def) {
+            localStorage["certipicateInfo"] = def 
+            contactInCert = JSON.parse(def);
+            createTBcontact(contactInCert);
+        }
+        //הצגת איש קשר מכפתור של הצג איש קשר
+        function createTBcontact(contactInCert) {
+            document.getElementById('id01').style.display = 'block';
+            $("#updateContact").hide();
+            let cert_num = contactInCert.Certificate_num;
+            let contactToShow = [];
+            for (var i = 0; i < certificatedata.length; i++) {
+                if (cert_num == certificatedata[i].Certificate_num) {
+                    for (var j = 0; j < AllContacts.length; j++) {
+                        if (certificatedata[i].Contact_id == AllContacts[j].Id) {
+                            contact = {
+                                Id: AllContacts[j].Id,
+                                Full_name: AllContacts[j].Full_name,
+                                Phone: AllContacts[j].Phone,
+                                Mail: AllContacts[j].Mail
+                            }
+                            contactToShow.push(contact);
+                        }
+                    }
+                }
+            }
+            try {
+                tbl1 = $('#ContactTable1').DataTable({
+                    data: contactToShow,
+                    pageLength: 10,
+                    responsive: true,
+                    columns: [
+
+                        { data: "Id" },
+                        { data: "Full_name" },
+                        { data: "Phone" },
+                        { data: "Mail" },
+
+                        {
+                            render: function (data, type, row, meta) {
+                                let def = JSON.stringify(row);
+
+                                editBtn = "<button type='button' class = 'editBtn btn btn-success' value='" + def + "' onclick='editContact(this.value)'> עריכה </button>";
+
+                                pdfBtn = "<button type='button' class = 'pdfBtn btn btn-pdf' value='" + def + "' onclick='sendPdf2Mail(this.value)'> שליחת אישור במייל </button>";
+
+                                return editBtn + pdfBtn;
+
+
+                            }
+                        },
+
+                    ],
+                })
+
+            }
+
+            catch (err) {
+                alert(err);
+            }
+
+        }
+
+        //עריכת איש קשר
+        function editContact(datacontact) {
+            contact_data = JSON.parse(datacontact);
+            //document.getElementById('id02').style.display = 'block';
+           
+            $("#updateContact").show();
+            $("#contact_id1").val(contact_data.Id);
+            $("#contact_id1").prop('disabled', true);
+            $("#contact_name1").val(contact_data.Full_name);
+            $("#contact_phone1").val(contact_data.Phone);
+            $("#contact_mail1").val(contact_data.Mail);
+        }
+        // עדכון איש קשר
+        function updateContact() {
+            contact_update = {
+                Id: $("#contact_id1").val(),
+                Full_name: $("#contact_name1").val(),
+                Phone: $("#contact_phone1").val(),
+                Mail: $("#contact_mail1").val(),
+            }
+            let api = "../api/contact";
+            ajaxCall("PUT", api, JSON.stringify(contact_update), UpdateContactSuccess, UpdateContactError);
+        }
+        function UpdateContactSuccess() {
+            swal({
+                title: "מצוין!", text: "עדכון משתתף בוצע", type: "success", icon: "success"
+            }).then(function () {
+                location.reload();
+
+            });
+        }
+        function UpdateContactError() {
+            swal("עדכון משתתף לא בוצע!", err, "warning");
+        }
+        // מחיקת איש קשר
+        function deleteContact(def) {
+            delete_contact = JSON.parse(def);
+            contactToDelete = {
+                Contact_id: delete_contact.Id,
+                Instruction_num: inst_num.Instruction_num,
+            }
+            ajaxCall("DELETE", "../api/contact_in_instruction", JSON.stringify(contactToDelete), deleteContactSuccess, deleteContactError);
+
+        }
+        function deleteContactSuccess() {
+            swal({
+                title: "האם אתה בטוח שברצונך למחוק את המשתתף?",
+                text: "",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true
+            })
+                .then(function (willDelete) {
+                    if (willDelete) delete_contact(instructionToEdit);
+                    else swal("המשתתף לא נמחק!");
+                });
+        }
+        function delete_contact() {
+            swal({
+                title: "מצוין!", text: "משתתף בהדרכה נמחק בהצלחה", type: "success", icon: "success"
+            }).then(function () {
+                location.reload();
+
+            });
+        }
+        function deleteContactError() {
+            swal("המשתתף לא נמחק!", err, "warning");
+        }
+
+        //מחיקת אישור
+        function deleteCertificate(def) {
+            certificateToEdit = JSON.parse(def);
+            swal({
+                title: "האם אתה בטוח שברצונך למחוק את האישור?",
+                text: "",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true
+                })
+            .then(function (willDelete) {
+                 if (willDelete) delete_certificate(certificateToEdit);
+                  else swal("האישור לא נמחק!");
+            });
+        }
+        //מחיקה לוגית ולא מחיקה מהדאטה בייס
+        function delete_certificate(def) {
+                let deleteStatus = {
+                    Certificate_num: def.Certificate_num,
+                    Delete_status: 1,
+                }
+                ajaxCall("DELETE", "../api/certificate", JSON.stringify(deleteStatus), deleteCertSuccess, deleteCertError);
+        }
+        function deleteCertSuccess() {
+                swal({
+                    title: "מצוין!", text: "האישור נמחק בהצלחה", type: "success", icon: "success"
+                }).then(function () {
+                    location.reload();
+
+                });
+        }
+
+        function deleteCertError(err) {
+                swal("האישור לא נמחק!", err, "warning");
+        }
+
+        //עריכת אישור
+        function editcertBTN(datacert) {
+
+            certToEdit = JSON.parse(datacert);
+
+            mode = "edit";
+            document.querySelector('#contact_id').required = false;
+            document.querySelector('#contact_name').required = false;
+            document.querySelector('#contact_phone').required = false;
+            document.querySelector('#contact_mail').required = false;
+
+            document.getElementById('id03').style.display = 'block';
+            $("#contactDetails").hide();
+            for (var i = 0; i < certificateTypeList.length; i++) {
+                if (certificateTypeList[i].Type_name == certToEdit.Type_name)
+                    str = "<option value='" + certificateTypeList[i].Certificate_type_num + "'>" + certificateTypeList[i].Type_name + "</option>"
+            }
+            $("#certificateType").html(str);
+            $("#certificateType").prop('disabled', true)
+            $("#payStatus").val(certToEdit.Pay_status);
+            $("#checkStatus").val(certToEdit.Certificate_status);
+            $("#checkDate").val(certToEdit.Check_date.split("T")[0]);
+            $("#company").val(certToEdit.Company);
+            $("#address").val(certToEdit.Address);
+            $("#description").val(certToEdit.Description);
+            $("#price").val(certToEdit.Price);
+            $("#price").prop('disabled', true);
+            $("#invoice_num").val(certToEdit.Invoice_num);
+            $("#saveBTN").hide();
+            $("#new_cert").hide();
+            $("#newContact").hide();
+            $("#btn_new_contact").hide();
+            $("#btn_saveExist_contact").hide();
+            $("#searchContact").hide();
+            $("#btn_update_cert").show();
+            $("#priceTD").show();
+        }
+        //עדכון אישור
+        function updateCert() {
+            let newCert = {
+
+                Certificate_num: certToEdit.Certificate_num,
+                Certificate_type_num: $("#certificateType").val(),
+                Certificate_status: $('#checkStatus').val(),
+                Pay_status: $('#payStatus').val(),
+                Company: $('#company').val(),
+                Address: $('#address').val(),
+                Date: $('#checkDate').val(),
+                Description: $('#description').val(),
+                Invoice_num: $("#invoice_num").val(),
+            }
+            let api = "../api/certificate";
+                ajaxCall("PUT", api, JSON.stringify(newCert), updateCertSuccess, updateCertError);
+        }
+
+        function updateCertSuccess(data) {
+                swal({
+                    title: "מצוין!", text: "עדכון אישור בוצע בהצלחה!", type: "success", icon: "success"
+                }).then(function () {
+                    location.reload();
+
+                });
+        }
+        function updateCertError() {
+                swal("נכשל!", "עדכון אישור נכשל!", "warning")
+        }
+
+        function New_contact() {
+            $("#newContact").show();
+        }
+        //ניקוי פופ אפ של אישור חדש
+        function clearPopuP() {
+            mode = "new";
+            str = "<option>סוג אישור</option>"
+            for (var i = 0; i < certificateTypeList.length; i++) {
+                str += "<option value='" + certificateTypeList[i].Certificate_type_num + "'>" + certificateTypeList[i].Type_name + "</option>"
+            }
+            $("#certificateType").html(str);
+            $("#certificateType").prop('disabled', false);
+            document.querySelector('#contact_id').required = true;
+            document.querySelector('#contact_name').required = true;
+            document.querySelector('#contact_phone').required = true;
+            document.querySelector('#contact_mail').required = true;
+            $("#checkStatus").val("");
+            $("#company").val("");
+            $("#payStatus").val("");
+            $("#address").val("");
+            $("#checkDate").val("");
+            $("#description").val("");
+            $("#invoice_num").val("");
+            $("#btn_saveExist_contact").show();
+            $("#searchContact").show();
+            $("#new_cert").show();
+            $("#saveBTN").show();
+            $("#priceTD").hide();
+            $("#contactDetails").show();
+            $("#btn_update_cert").hide();
+        }
+
+        function saveNewCert() {
+            if (mode == "new") {
+                new_contact();
+            }
+            else updateCert();
+        }
+
+        function new_contact() {
+            contact = {
+                Id: $("#contact_id").val(),
+                Full_name: $("#contact_name").val(),
+                Phone: $("#contact_phone").val(),
+                Mail: $("#contact_mail").val()
+            }
+
+            let api = "../api/contact";
+            ajaxCall("POST", api, JSON.stringify(contact), createNewcontactSuccess, createNewcontactError);
+        }
+
+        //הכנסת אישור חדש לדאטה בייס
+        function new_cert() {
+            document.getElementById('id03').style.display = 'none';
+
+            let newCert= {
+
+                Certificate_type_num: $("#certificateType").val(),
+                Pay_status: $("#payStatus").val(),
+                Certificate_status: $("#checkStatus").val(),
+                Company: $("#company").val(),
+                Date: $("#checkDate").val(),
+                Address: $("#address").val(),
+                Description: $("#description").val(),
+                Delete_status: 0,
+                Invoice_num: $("#invoice_num").val(),
+                User_email: user_mail,
+                Contact_id: $("#contact_id").val()
+            }
+
+            let api = "../api/certificate";
+            ajaxCall("POST", api, JSON.stringify(newCert), createNewCertSuccess, createNewCertError);
+        }
+
+        function createNewCertSuccess(Certdata) {
+            swal({
+                title: "מצוין!", text: "אישור חדש נוצר בהצלחה!", type: "success", icon: "success"
+            }).then(function () {
+                contactList = "";
+                location.reload();
+            });
+
+        }
+        function createNewCertError() {
+            swal("נכשל!", "הכנסת אישור חדש נכשל!", "warning")
+        }
+
+
+        function logout() {
+            localStorage.removeItem("user");
+            window.location = "login.html";
+
+        }
+        function refreshTBcontact() {
+            $('#ContactTable1').dataTable().fnDestroy();
+        }
+
+    </script>
+</head>
+<body>
+    <div id="logo">
+        <img class="logo" src="photos/logo.jpeg" height="50" />
+        <button onclick="logout()" id="logout">התנתקות</button>
+    </div>
+    <div class="body-wrap">
+        <nav class="navbar navbar-inverse">
+            <div class="container1">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarMenu" aria-expanded="false">
+                        <span id="navigation" class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" id="navbarMenu">
+                    <ul class="nav navbar-nav navbar-right  bts-nav">
+                        <li><span class="glyphicon glyphicon-cog" aria-hidden="true"></span><a href="settings.html"></a></li>
+                        <li></li>
+                        <li class="nav-item">
+                            <span class="glyphicon glyphicon-bell" aria-hidden="true"></span><a href="alerts.html"></a>
+                        </li>
+                        <li><a href="users.html">משתמשים</a></li>
+                        <li><a href="orders.html">הזמנות</a></li>
+                        <li class="active"><a href="certificates.html">אישורים<span class="sr-only">(current)</span></a></li>
+                        <li><a href="instructions.html">הדרכות</a></li>
+                        <li><a href="projects.html">פרויקטים</a></li>
+                        <li>
+                            <span class="glyphicon glyphicon-home" aria-hidden="true"></span><a href="home.html"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!--NavBar-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <div id="cert_bar" dir="rtl">
+        <div id="headline">
+            <h1 class="cert">אישורים</h1>
+        </div>
+        <br />
+        <div id="buttons">
+            <button id="myBtn" style="margin-left:10px" class="btn btn-primary" onclick="document.getElementById('id03').style.display='block',clearPopuP()">הוסף אישור חדש</button>
+        </div>
+    </div>
+    <form id="pForm">
+        <table id="certTable" class="display" style="width:100%" dir="rtl">
+            <thead>
+                <tr>
+                    <th>מספר אישור</th>
+                    <th>שם סוג</th>
+                    <th>חברה</th>
+                    <th>תאריך בדיקה</th>
+                    <th>תיאור בדיקה</th>
+                    <th>כתובת</th>
+                    <th>סטטוס בדיקה</th>
+                    <th>מספר חשבונית</th>
+                    <th>סטטוס תשלום</th>
+                    <th> מחיר כולל</th>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+    </form>
+    <div class="w3-container">
+        <div id="id03" class="w3-modal">
+            <div class="w3-modal-content">
+                <div class="w3-container" dir="rtl">
+                    <span onclick="document.getElementById('id03').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+                    <form id="newCertForm" onsubmit="return false">
+                        <br />
+                        <h2 id="new_cert">אישור חדש</h2>
+                        <br />
+                        <table class="display" style="width:100%" dir="rtl">
+                            <thead>
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="certificateType"><span class="red-star">★ </span>סוג אישור</label>
+                                            <select class="form-control groupDetails" id="certificateType" required>
+                                                <option value="">בחר</option>
+                                            </select>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="checkStatus"><span class="red-star">★ </span>סטאטוס בדיקה</label>
+                                            <select class="form-control groupDetails" id="checkStatus" required>
+                                                <option value="">בחר</option>
+                                                <option value="1">עבר</option>
+                                                <option value="2">לא עבר</option>
+                                            </select>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="payStatus"><span class="red-star">★ </span>סטאטוס תשלום</label>
+                                            <select class="form-control groupDetails" id="payStatus" required>
+                                                <option value="">בחר</option>
+                                                <option value="1">שולם</option>
+                                                <option value="2">לא שולם</option>
+                                            </select>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="company"><span class="red-star">★ </span>שם המוסד/חברה</label>
+                                            <textarea rows="1" class="form-control groupDetails" id="company" placeholder="הזן שם מוסד/חברה" required></textarea>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="address"><span class="red-star">★ </span>כתובת</label>
+                                            <textarea rows="1" class="form-control groupDetails" id="address" placeholder="הזן כתובת" required></textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="checkDate"><span class="red-star">★ </span>תאריך בדיקה</label>
+                                            <br />
+                                            <input type="date" class="groupDetails" id="checkDate" required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="description">תיאור בדיקה</label>
+                                            <textarea rows="4" class="form-control groupDetails" id="description" placeholder="הזן תיאור בדיקה"></textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="invoice_num">מספר חשבונית</label>
+                                            <textarea rows="1" class="form-control groupDetails" id="invoice_num" placeholder=" הזן מספר חשבונית"></textarea>
+                                        </div>
+                                    </td>
+                                    <td id="priceTD">
+                                        <div class="form-group">
+                                            <label for="price">מחיר</label>
+                                            <textarea rows="1" class="form-control groupDetails" id="price"></textarea>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr id="contactDetails">
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_id"><span class="red-star">★ </span>תעודת זהות</label>
+                                            <input type="text" class="form-control groupDetails" id="contact_id" placeholder=" הזן ת.ז " pattern="[0-9]+" oninvalid="this.setCustomValidity('הזן מספרים בלבד')" oninput="this.setCustomValidity('')" required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_name"><span class="red-star">★ </span>שם מלא</label>
+                                            <input type="text" class="form-control groupDetails" id="contact_name" placeholder=" הזן שם מלא " required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_phone">טלפון<span class="red-star">★ </span></label>
+                                            <input type="text" class="form-control groupDetails" id="contact_phone" placeholder=" הזן טלפון " pattern="[0-9]+" oninvalid="this.setCustomValidity('הזן מספרים בלבד')" oninput="this.setCustomValidity('')" required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_mail"><span class="red-star">★ </span>מייל</label>
+                                            <input type="text" class="form-control groupDetails" id="contact_mail" placeholder=" הזן מייל " pattern=".+@.+"
+                                                   oninvalid="this.setCustomValidity('כתובת המייל שגויה')"
+                                                   oninput="this.setCustomValidity('')" required>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </thead>
+                        </table>
+                        <br />
+                        <button type="submit" id="saveContactsBTN" class="btn btn-primary">שמור</button>
+                    </form>
+                </div>
+                <br />
+            </div>
+        </div>
+    </div>
+    <div class="w3-container">
+        <div id="id01" class="w3-modal">
+            <div class="w3-modal-content">
+                <div class="w3-container" dir="rtl">
+                    <span onclick="document.getElementById('id01').style.display='none',refreshTBcontact()" class="w3-button w3-display-topright">&times;</span>
+                    <!--<form id="pForm">-->
+                    <h3 id="new_cert">איש קשר</h3>
+                    <table id="ContactTable1" class="display" style="width:100%" dir="rtl">
+                        <thead>
+                            <tr>
+                                <th>ת.ז</th>
+                                <th>שם מלא</th>
+                                <th>טלפון</th>
+                                <th>מייל</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <!--</form>-->
+                    <div id="updateContact">
+                        <form id="updateContactForm" onsubmit="return false">
+                            <h3 id="update_contact">עריכת איש קשר</h3>
+                            <br />
+                            <table id="updateContactTb">
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_id1"><span class="red-star">★ </span>תעודת זהות</label>
+                                            <input type="text" class="form-control groupDetails" id="contact_id1" placeholder=" הזן ת.ז " pattern="[0-9]+" oninvalid="this.setCustomValidity('הזן מספרים בלבד')" oninput="this.setCustomValidity('')" required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_name1"><span class="red-star">★ </span>שם מלא</label>
+                                            <input type="text" class="form-control groupDetails" id="contact_name1" placeholder=" הזן שם מלא " required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_phone1">טלפון<span class="red-star">★ </span></label>
+                                            <input type="text" class="form-control groupDetails" id="contact_phone1" placeholder=" הזן טלפון " pattern="[0-9]+" oninvalid="this.setCustomValidity('הזן מספרים בלבד')" oninput="this.setCustomValidity('')" required>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="contact_mail1"><span class="red-star">★ </span>מייל</label>
+                                            <input type="text" class="form-control groupDetails" id="contact_mail1" placeholder=" הזן מייל " pattern=".+@.+"
+                                                   oninvalid="this.setCustomValidity('כתובת המייל שגויה')"
+                                                   oninput="this.setCustomValidity('')" required>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>
+                                        <button type="submit" id="btnUpdate_contact" class="btn btn-primary"> עדכן איש קשר </button>
+                                    </th>
+                                </tr>
+                            </table>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

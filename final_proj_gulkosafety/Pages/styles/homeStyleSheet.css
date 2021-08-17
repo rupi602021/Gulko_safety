@@ -1,0 +1,95 @@
+﻿body {
+    background-color: #eeeeee;
+    direction:rtl;
+}
+
+a, p {
+    color: black;
+    font-size: 16px;
+}
+ul.circle {
+    list-style-type: circle;
+}
+li {
+    padding: 5px;
+    font-size:16px;
+}
+th {
+    font-size: 16px;
+    padding-left: 20px;
+}
+#instruction_bar {
+    text-align: center;
+    display: flex;
+    margin-top: 40px
+}
+
+h1.instructions {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+    font-weight: bold;
+}
+
+.card {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+.card-body.section2 {
+    BACKGROUND-COLOR: white;
+    margin: 3%;
+    padding: 2%;
+    border-radius: 7px;
+}
+.card-body.section1 {
+    BACKGROUND-COLOR: white;
+    margin: 3%;
+    height: 600px;
+    padding: 2%;
+    padding-bottom: 6%;
+    border-radius: 7px;
+}
+h3 {
+    font-size: 20px;
+    font-weight: bold;
+    color: cadetblue;
+    text-align: center;
+    margin-top: 0px;
+    margin-right:10px;
+    direction:rtl;
+}
+.w3-container, .w3-panel {
+    padding: 4%;
+    text-align: center;
+    padding-right: 37%; 
+}
+
+
+#active {
+    color: cadetblue;
+    background-color: #eeeeee;
+    FONT-WEIGHT: bold;
+    border-color: cadetblue;
+}
+
+#logo{
+    direction:ltr;
+}
+#calendar {
+    height:100%;
+    width:100%;
+}
+
+.navbar-right {
+    float: right!important;
+    margin-right: -15px;
+    direction: ltr;
+}
+#logout {
+    border: unset;
+}
+
+.image{
+    margin:0!important;
+}
+
+

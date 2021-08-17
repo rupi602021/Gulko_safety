@@ -1,0 +1,548 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>התראות</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src='https://kit.fontawesome.com/a076d05399.js' crossorigin='anonymous'></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link href="styles/nav_bar_style.css" rel="stylesheet" />
+    <link href="styles/alertsStyles.css" rel="stylesheet" />
+    <script src="../Scripts/ajaxCallsWithKey.js"></script>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        var user_email;
+        user = JSON.parse(localStorage["user"]);
+        $(document).ready(function () {
+            if (user.User_type_num == 1) {
+                 user_email = user.Email;
+            }
+            else {
+                user_email = user.Email;
+                userType2Mode();
+
+            }
+            $("#pForm").hide();
+            alertArchiveList = [];
+            alertList = [];
+            getAlerts();
+            $("#btns").hide();
+            $("#buttonUpload").click(uploadDefectPhoto);
+            getAlertArchive();
+            AlertDivByType = 0;
+            FirstTimeUploadTable = 0;
+        });
+
+        function userType2Mode() {
+
+            $(".type2mode").hide()
+
+        }
+        function check_if_date_pass() {
+            var today = new Date();
+            var dd_today = String(today.getDate()).padStart(2, '0');
+            var mm_today = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy_today = today.getFullYear();
+
+            today = yyyy_today + '-' + mm_today + '-' + dd_today;
+
+            for (var i = 0; i < alertList.length; i++) {
+                var data = alertList[i].Date.split("T")[0];
+                var arr = data.split('-');
+                var dd = arr[2];
+                var mm = String(Number(arr[1]) + 1);
+                var yyyy = arr[0];
+                var InAMonth = yyyy + '-0' + mm + '-' + dd;
+
+                if (today >= InAMonth) {
+                    update_status = {
+                        Alert_num: Number(alertList[i].Alert_num),
+                        Content: alertList[i].Content,
+                        Date: alertList[i].Date,
+                        Alert_type_num: alertList[i].Alert_type_num,
+                        User_email: alertList[i].User_email,
+                        Status: 1,
+                        Proj_num: alertList[i].Proj_num,
+                        Proj_name: alertList[i].Proj_name
+
+                    }
+                    let api = "../api/alert";
+                    ajaxCall("PUT", api, JSON.stringify(update_status), UpdateAlertStatusSuccess2, UpdateAlertStatusError)
+                }
+            }
+            renderAlerts();
+        }
+
+        function UpdateAlertStatusSuccess2() {
+            //swal("Good job!", "Alert status update successfully!", "success")
+            renderAlerts();
+        }
+
+
+        function getAlerts() {
+
+            let api = "../api/alert?user_email=" + user_email;
+            ajaxCall("GET", api, "", getAlertsuccess, getError);
+        }
+        function getAlertArchive() {
+
+            let api = "../api/alert/" + user_email + "/AlertArchive";
+            ajaxCall("GET", api, "", getAlertArchivSuccess, getError);
+        }
+
+        function getAlertArchivSuccess(data) {
+            alertArchiveList = data;
+
+        }
+
+        function getError() {
+            swal("Failed!", "You failed to read the alerts!", "warning")
+        }
+        function getAlertsuccess(data) {
+            alertList = data;
+            check_if_date_pass();
+        }
+        function ChangeStatus(id) {
+            for (var i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_num == id) {
+                    update_status = {
+                        Alert_num: Number(id),
+                        Content: alertList[i].Content,
+                        Date: alertList[i].Date,
+                        Alert_type_num: alertList[i].Alert_type_num,
+                        User_email: alertList[i].User_email,
+                        Status: 1,
+                        Proj_num: alertList[i].Proj_num,
+                        Proj_name: alertList[i].Proj_name
+
+                    }
+                }
+            }
+
+            let api = "../api/alert";
+            ajaxCall("PUT", api, JSON.stringify(update_status), UpdateAlertStatusSuccess, UpdateAlertStatusError)
+        }
+        function UpdateAlertStatusSuccess() {
+            location.reload();
+        }
+        function UpdateAlertStatusError() {
+            swal("Failed!", "Failed to update the alerts!", "warning")
+        }
+
+
+        function renderAlerts() {
+            document.getElementById('Alerts_div').innerHTML = "";
+            document.getElementById('Alerts_div').setAttribute('style', 'padding:10px;')
+
+            for (i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_type_num == 1) {
+                    document.getElementById('Alerts_div').innerHTML += "<div  class='alert alert-Safety-level alert-dismissible'> <a id='" + alertList[i].Alert_num + "' href='#' onclick='ChangeStatus(this.id)' class='close' data-dismiss='alert' aria-label='close'>&times;</a><strong class='date'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-tachometer-alt' style='font-size:24px'></i>&nbsp&nbsp<a id='" + alertList[i].Alert_num + "' href='#' onclick='renderSafetyAlert(this.id)'>סיכום עדכון רמת בטיחות בפרויקט " + alertList[i].Proj_name + "</a></div> ";
+                }
+                if (alertList[i].Alert_type_num == 2) {
+                    document.getElementById('Alerts_div').innerHTML += "<div  class='alert alert-certificate alert-dismissible'> <a id='" + alertList[i].Alert_num + "' href='#' onclick='ChangeStatus(this.id)' class='close' data-dismiss='alert' aria-label='close'>&times;</a><strong class='date'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='far fa-calendar-alt' style='font-size:24px'></i>&nbsp&nbsp" + alertList[i].Content + " בפרויקט: " + alertList[i].Proj_name+ "</div> ";
+                }
+                if (alertList[i].Alert_type_num == 3) {
+                    if (user.User_type_num != 1 && alertList[i].Content.split(",")[0] == "תמונת תיקון ליקוי לא אושרה")
+                        document.getElementById('Alerts_div').innerHTML += "<div  class='alert alert-Defective-repair-decline alert-dismissible'> <a id='" + alertList[i].Alert_num + "' href='#' onclick='ChangeStatus(this.id)' class='close' data-dismiss='alert' aria-label='close'>&times;</a><strong class='date'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-tachometer-alt' style='font-size:24px'></i>&nbsp&nbsp<a id='" + alertList[i].Alert_num + "' href='#' onclick='renderDefectPic(this.id)'>" + alertList[i].Content.split(",")[0] + " בפרויקט: " + alertList[i].Proj_name + " </a ></div > ";
+                    else document.getElementById('Alerts_div').innerHTML += "<div  class='alert alert-Defective-repair alert-dismissible'> <a id='" + alertList[i].Alert_num + "' href='#' onclick='ChangeStatus(this.id)' class='close' data-dismiss='alert' aria-label='close'>&times;</a><strong class='date'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-tachometer-alt' style='font-size:24px'></i>&nbsp&nbsp<a id='" + alertList[i].Alert_num + "' href='#' onclick='renderDefectPic(this.id)'>" + alertList[i].Content.split(",")[0] + " בפרויקט: " + alertList[i].Proj_name + " </a ></div > ";
+                }
+                if (alertList[i].Alert_type_num == 4) {
+                    document.getElementById('Alerts_div').innerHTML += "<div class='alert alert-instruction alert-dismissible'><a id='" + alertList[i].Alert_num + "' href='#' onclick='ChangeStatus(this.id)' class='close' data-dismiss='alert' aria-label='close'>&times;</a><strong class='date'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-chalkboard-teacher' style='font-size:24px'></i>&nbsp&nbsp" + alertList[i].Content + " בפרויקט: " + alertList[i].Proj_name + "</div> ";
+                }
+                if (alertList[i].Alert_type_num == 5) {
+                    document.getElementById('Alerts_div').innerHTML += "<div class='alert alert-defect alert-dismissible'><a id='" + alertList[i].Alert_num + "' href='#' onclick='ChangeStatus(this.id)' class='close' data-dismiss='alert' aria-label='close'>&times;</a><strong class='date'> " + alertList[i].Date.split("T")[0] + " " + alertList[i].Date.split("T")[1] + " </strong> <i class='fas fa-exclamation-triangle' style='font-size:24px'></i>&nbsp&nbsp" + alertList[i].Content + " בפרויקט: " + alertList[i].Proj_name + "</div> ";
+                }
+            }
+
+        }
+        function renderSafetyAlert(id) {
+            document.getElementById('alert_paragraph').innerHTML = ""
+            document.getElementById('id04').style.display = 'block';
+            for (var i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_num == id) {
+
+                    $("#alert_paragraph").html(alertList[i].Content);
+                }
+
+            }
+
+        }
+
+        function renderDefectPic(alert_Num) {
+            fullImagePath
+            alertNum = alert_Num;
+            $('.image').attr({
+                'src': ""
+            });
+            $('#mask').addClass('showing');
+            $('html').addClass('hide-scroll');
+            var id = '#dialog';
+            fullImagePath = "";
+            for (var i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_num == alertNum) {
+                    $('#alert_title').html(alertList[i].Content.split(",")[0]);
+                    fullImagePath = "../uploadedFiles/" + alertList[i].Content.split(",")[1];
+                    imagePath = alertList[i].Content.split(",")[1];
+                    projectNum = alertList[i].Proj_num;
+                    break;
+                }
+            }
+
+            $('.image').attr({
+                'src': fullImagePath
+            });
+
+            if (user.User_type_num == 1) {
+                $('#approvePicBTNs').show();
+                getProject();
+            }
+            else $('#approvePicBTNs').hide();
+
+            //if close button is clicked
+            $('.window .close').click(function (e) {
+                ////Cancel the link behavior
+                e.preventDefault();
+                $('#mask').removeClass('showing');
+                $('html').removeClass('hide-scroll');
+            });
+        }
+
+        function getProject() {
+            let api = "../api/project?project_num=" + projectNum;
+            ajaxCall("GET", api, "", getProjSuccess, getProjError);
+        }
+
+        function getProjSuccess(proj) {
+            project = proj;
+            projContacts = [];
+            projContacts.push(project.Manager_email);
+            projContacts.push(project.Foreman_email);
+        } 
+
+        function getProjError(err) {
+            project = "";
+        }
+
+        function updateDefectStatus() {
+            $('#mask').removeClass('showing');
+            $('html').removeClass('hide-scroll');            
+            var fix_status = 1;
+            let api = "../api/defect_in_report?picture_link=" + imagePath + "&fix_status=" + fix_status;
+            ajaxCall("PUT", api, "", postAlertOnImg, updateDefectsInReportError);
+        }
+
+        function updateDefectsInReportError() {
+            alert("ליקוי לא עודכן");
+        }
+
+        function updateDefectImgSuccess() {
+            location.reload();
+            //-יצירת התראה-להשלים
+        }
+        function postAlertOnImg() {
+
+            if (project != null) {
+                for (var i = 0; i < projContacts.length; i++) {
+                    var now = new Date().toISOString();
+                    newAlertOnAprroveIMG = {
+                        Content: "תמונת תיקון ליקוי פיגום אושרה," + imagePath,
+                        Date: now,
+                        Alert_type_num: 3,
+                        User_email: projContacts[i],
+                        Status: 0,
+                        Proj_num: project.Project_num
+
+                    }
+                    let api = "../api/alert";
+                    ajaxCall("POST", api, JSON.stringify(newAlertOnAprroveIMG), PostAlertSuccess, PostAlertError)
+
+                }
+            }
+
+            else alert("בעיה בהבאת פרויקט- התראה לא נשלחה");
+        }
+
+        function defectNotApprove() {
+            if (project != "") {
+                var now = new Date().toISOString();
+                for (var i = 0; i < projContacts.length; i++) {
+                    newAlertOnAprroveIMG = {
+                        Content: "תמונת תיקון ליקוי פיגום לא אושרה," + imagePath,
+                        Date: now,
+                        Alert_type_num: 3,
+                        User_email: projContacts[i],
+                        Status: 0,
+                        Proj_num: project.Project_num
+
+                    }
+                    let api = "../api/alert";
+                    ajaxCall("POST", api, JSON.stringify(newAlertOnAprroveIMG), PostAlertSuccess, PostAlertError);
+                }
+            }
+
+            else alert("בעיה בהבאת פרויקט- התראה לא נשלחה");
+        }
+
+        function PostAlertSuccess() {
+            swal("סטטוס תיקון עודכן בהצלחה!", "נשלחה התראה לאנשי הקשר בפרויקט", "success");
+            //move alert to archive
+            ChangeStatus(alertNum);
+        }
+
+        function PostAlertError(err) {
+            swal("התראה לאנשי הקשר לא נשלחה!", "סטטוס ליקוי עודכן בהצלחה", "warning")
+        }
+
+        function RenderAlertDivByType() {
+
+            if (AlertDivByType == 0) {
+                if (FirstTimeUploadTable == 0) {
+                    $("#archiv_alert_btn").text("התראות חדשות");
+                    AlertDivByType = 1;
+                    $("#Alerts_div").hide();
+                    renderAlertsArchive();
+                    FirstTimeUploadTable = 1;
+                }
+                else {
+                    $("#archiv_alert_btn").text("התראות חדשות");
+                    AlertDivByType = 1;
+                    $("#Alerts_div").hide();
+                    $("#pForm").show();
+                    $("#AlertArchiveTable").show();
+                }
+
+            }
+            else {
+                $("#archiv_alert_btn").text("ארכיון התראות");
+                AlertDivByType = 0;
+                $("#Alerts_div").show();
+                $("#pForm").hide();
+                $("#AlertArchiveTable").hide();
+                renderAlerts();
+            }
+
+
+
+        }
+        function renderAlertsArchive() {
+            $("#pForm").show();
+            $("#ph").hide();
+            $("#formUpload").hide();
+            $("#Alerts_div").hide();
+            let alertsToShow = [];
+            for (i = 0; i < alertArchiveList.length; i++) {
+                let a = {
+                    Alert_num: alertArchiveList[i].Alert_num,
+                    Type_name: alertArchiveList[i].Type_name,
+                    Alert_type_num: alertArchiveList[i].Alert_type_num,
+                    Content: alertArchiveList[i].Content,
+                    Date: alertArchiveList[i].Date.split('T')[0],
+                    Time: alertArchiveList[i].Date.split('T')[1],
+              
+                }
+                alertsToShow.push(a);
+            }
+            try {
+                tbl = $('#AlertArchiveTable').DataTable({
+                    data: alertsToShow,
+                    pageLength: 5,
+                    columns: [
+
+                        { data: "Alert_num" },
+                        { data: "Type_name" },
+                        { data: "Alert_type_num" },
+                        {
+                            render: function (data, type, row, meta) {
+                                if (row.Alert_type_num == 1) {
+                                    return "סיכום עדכון רמת בטיחות פרויקט"
+                                }
+                                else {
+                                    return row.Content
+                                }
+                            }
+                        },
+                        { data: "Date" },
+                        { data: "Time" },
+
+                        {
+
+                            render: function (data, type, row, meta) {
+                                let datalert = "alert_data='" + row.Alert_num + "'";
+                                if (row.Alert_type_num == 1) {
+                                    editBtn = "<button type='button' id='" + row.Alert_num + "' class = 'editBtn btn btn-success' onclick='renderSafetyAlertInArchive(this.id)'"+ datalert + "> צפה בתוכן </button>";
+                                    return editBtn;
+                                }
+                                else
+                                    return "";
+                            }
+                        },
+
+                    ],
+                });
+
+            }
+
+            catch (err) {
+                alert(err);
+            }
+        }
+        function renderSafetyAlertInArchive(id) {
+            document.getElementById('alert_paragraph').innerHTML = ""
+            document.getElementById('id04').style.display = 'block';
+            for (var i = 0; i < alertArchiveList.length; i++) {
+                if (alertArchiveList[i].Alert_num == id) {
+
+                    $("#alert_paragraph").html(alertArchiveList[i].Content);
+                }
+
+            }
+
+        }
+
+        //העלאת תמונה
+        function uploadDefectPhoto() {
+            var data = new FormData();
+            var files = $("#files").get(0).files;
+
+            if (files.length > 0) {
+                for (f = 0; f < files.length; f++) {
+                    data.append("UploadedImage", files[f]);
+                }
+                data.append("name", "NewDefect");
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "../Api/FileUpload",
+                contentType: false,
+                processData: false,
+                data: data,
+                success: showImages,
+                error: error
+            });
+
+            return false;
+        }
+        
+        function error(data) {
+            console.log(data);
+        }
+
+        function logout() {
+            localStorage.removeItem("user");
+            window.location = "login.html";
+            
+        }
+    </script>
+</head>
+<body>
+    <div id="logo">
+        <img class="logo" src="photos/logo.jpeg" height="50" />
+        <button onclick="logout()" id="logout">התנתקות</button>
+    </div>
+    <div class="body-wrap">
+        <nav class="navbar navbar-inverse">
+            <div class="container1">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarMenu" aria-expanded="false">
+                        <span id="navigation" class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" id="navbarMenu">
+                    <ul class="nav navbar-nav navbar-right  bts-nav">
+                        <li><span class="glyphicon glyphicon-cog" aria-hidden="true"></span><a href="settings.html"></a></li>
+                        <li></li>
+                        <li class="nav-item" id="active">
+                            <span class="glyphicon glyphicon-bell" aria-hidden="true"></span><a href="alerts.html"></a>
+                        </li>
+                        <li class="type2mode"><a href="users.html">משתמשים</a></li>
+                        <li class="type2mode"><a href="orders.html">הזמנות</a></li>
+                        <li class="type2mode"><a href="certificates.html">אישורים</a></li>
+                        <li class="type2mode"><a href="instructions.html">הדרכות</a></li>
+                        <li><a href="projects.html">פרויקטים</a></li>
+                        <li class="type2mode">
+                            <span class="glyphicon glyphicon-home" aria-hidden="true"></span><a href="home.html"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!--NavBar-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <div id="alert_bar" dir="rtl">
+        <div id="headline">
+            <h1 class="alerts">התראות</h1>
+        </div>
+    </div>
+    <button id="archiv_alert_btn" type="button" class="btn btn-primary" onclick="RenderAlertDivByType()">ארכיון התראות</button>
+    <div id="Alerts_div"></div>
+    <form id="pForm">
+        <table id="AlertArchiveTable" class="display" style="width:100%" dir="rtl">
+            <thead>
+                <tr>
+                    <th>מספר התראה</th>
+                    <th>שם סוג התראה</th>
+                    <th>סוג התראה</th>
+                    <th>תוכן</th>
+                    <th>תאריך</th>
+                    <th>שעה</th>
+                    <th></th>
+                </tr>
+            </thead>
+        </table>
+    </form>
+
+
+    <div id="ph">
+
+    </div>
+    <div class="w3-container">
+        <div id="id04" class="w3-modal">
+            <div class="w3-modal-content">
+                <div class="w3-container">
+                    <span onclick="document.getElementById('id04').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+                    <div id="alert_paragraph"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="mask">
+        <div id="boxes">
+            <div class="inner">
+                <div id="dialog" class="window">
+                    <a href="#" class="close">x</a>
+                    <div id="showImg">
+                        <div id="popupfoot"> <img src="#" class="image" alt="Loading..." /> </div>
+                        <div id="approvePicBTNs">
+                            <button class="btn btn-danger fixBTNs" onclick="defectNotApprove()">ליקוי לא תוקן</button>
+                            <button class="btn btn-success fixBTNs" onclick="updateDefectStatus()">אשר תקינות ליקוי</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

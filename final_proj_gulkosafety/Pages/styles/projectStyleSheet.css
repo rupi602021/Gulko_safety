@@ -1,0 +1,212 @@
+﻿.form-control {
+    font-size: 12px;
+}
+
+.form-group {
+    margin-bottom: 5px;
+}
+
+#main {
+    direction: rtl;
+    text-align: right;
+}
+
+h3 {
+    font-size: 20px;
+    font-weight: bold;
+    color: cadetblue;
+    text-align: right;
+    margin-top: 0px;
+}
+
+.project_name {
+    font-family: 'Lucida Console';
+    color: cadetblue;
+    font-weight: bold;
+}
+
+.card {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+body {
+    background-color: #eeeeee;
+}
+ th{
+     text-align:right;
+ }
+#table {
+    margin-top: 30px;
+    padding-left: 12%;
+    padding-right: 12%;
+    text-align: center;
+}
+
+.red-star {
+    color: red;
+}
+
+
+.section1 {
+    min-height: 400px;
+}
+
+.section2 {
+    height: 200px;
+}
+
+.section3 {
+    min-height: 300px;
+}
+
+.newBTN {
+    float: right;
+    text-align: left;
+}
+
+#editDetailsBTN, #editContactsBTN, #saveDetailsBTN, #saveContactsBTN {
+    background-color: transparent;
+    border: 0px;
+}
+span.glyphicon.glyphicon-floppy-disk, span.glyphicon.glyphicon-pencil {
+    font-size: 20px;
+    top: 3px;
+}
+
+.editLocation {
+    position: absolute;
+    margin: 0;
+    padding: 5px;
+    bottom: 0;
+    left: 0;
+}
+
+/*p {
+    text-align: left;
+    margin-bottom:0px;
+}*/
+
+.proj {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    color: cadetblue;
+    font-weight: bold;
+}
+#proj_bar {
+    text-align: right;
+    display: flex;
+    margin-top: 15px;
+}
+
+.btn-success {
+    background-color: white;
+    color: black;
+    border: 3px solid #569366;
+    margin: 3px;
+}
+ .btn-success:hover {
+    background-color: #569366;
+    color: white;
+}
+
+.btn-danger {
+    background-color: white;
+    color: black;
+    border: 3px solid #bd3636;
+    margin: 3px;
+}
+.btn-danger:hover {
+    background-color: #bd3636;
+    color: white;
+
+}
+#newBTN {
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+}
+ul.nav.navbar-nav.navbar-right.bts-nav {
+    flex-direction: inherit;
+}
+nav.navbar.navbar-inverse {
+    float: right;
+    display: contents;
+}
+.body-wrap {
+    background-color: cadetblue;
+}
+
+.alertDiv {
+    font-size: 16px;
+}
+
+#alerts {
+    border: 1px solid cadetblue;
+    width: 100%;
+    height: 80%;
+    overflow: scroll;
+}
+
+#pForm {
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+div#report_BTN {
+    text-align: left;
+}
+
+.box {
+    width: 100%;
+    margin-top: 25px;
+}
+
+.gauge {
+    width: 100%;
+    height: 240px;
+}
+
+.flexbox {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+    .flexbox > div {
+        flex: 1 0 300px;
+    }
+.w3-container, .w3-panel {
+    padding-right: 4%;
+    direction: rtl;
+     
+}
+#alert_paragraph {
+    padding: 2%;
+
+}
+.projAlerts > p {
+    direction:rtl;
+    text-align: right;
+    font-size: 14px;
+    padding-right:2%;
+    color:black;
+}
+
+p {
+    text-align: right;
+   
+}
+
+#saveBTN {
+    color: #fff;
+    background-color: cadetblue;
+    border-color: cadetblue;
+    margin-right: 235%;
+}
+
+#table {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+#logout {
+    border: unset;
+}

@@ -1,0 +1,570 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Suez+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@1,700&family=Suez+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.3/css/responsive.dataTables.min.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/responsive/2.2.3/js/dataTables.responsive.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../Scripts/ajaxCallsWithKey.js"></script>
+
+    <link href="styles/alertsStyles.css" rel="stylesheet" />
+    <link href="styles/nav_bar_style.css" rel="stylesheet" />
+    <link href="styles/homeStyleSheet.css" rel="stylesheet" />
+
+    <title>בית</title>
+    <script>
+        var user_email = "gulkosafety@gmail.com";// צריך לקחת את היוזר מהלוקאל סטורג - של מי שנמצא בלוג אין
+        var state = "less";
+        $(document).ready(function () {
+            alertList = [];
+            reportList = [];
+            expiredInstructions = [];
+            expiredCertificates = [];
+            getAlerts();
+            getReports();
+            checkAboutToExpired();
+
+        });
+
+        function checkAboutToExpired() {
+            var today = new Date();
+            var dd_today = String(today.getDate()).padStart(2, '0');
+            var mm_today = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy_today = today.getFullYear();
+
+            today = yyyy_today + '-' + mm_today + '-' + dd_today;
+
+            getExpiredInstructions(today);
+            getExpiredCertificates(today);
+        }
+
+        function getExpiredInstructions(today) {
+            let api = "../api/instruction?date=" + today;
+            ajaxCall("GET", api, "", getExpiredInstructionsSuccess, getExpiredInstructionsError);
+        }
+
+        function getExpiredInstructionsSuccess(instructionsList) {
+            expiredInstructions = instructionsList;
+            console.log(expiredInstructions);
+            if (expiredInstructions.length > 0) {
+                let str = "<ul class='circle'>";
+                for (i = 0; i < expiredInstructions.length; i++) {
+                    if (i > 2)
+                        str += "<li class='hideMe'><a id='" + expiredInstructions[i].Instruction_num + "' onclick='renderInstruction(this.id)' href='#' >" + expiredInstructions[i].Type_name + " ל" + expiredInstructions[i].Company + "</a></li>";
+                    else
+                        str += "<li><a id='" + expiredInstructions[i].Instruction_num + "' onclick='renderInstruction(this.id)' href='#' >" + expiredInstructions[i].Type_name + " ל" + expiredInstructions[i].Company + "</a></li>";
+                }
+                str += "</ul>";
+                $("#instructions_expire_alerts").html(str);
+
+                if (expiredCertificates.length > 3) {
+                    $("#showInstructions").show();
+                    $(".hideMe").hide();
+                }
+                else $("#showInstructions").hide();
+            }
+            else {
+                $("#showInstructions").hide();
+                $("#instructions_expire_alerts").html("<ul class='circle'><li><strong>אין התראות</strong ></li></ul>");
+            }
+        }
+
+        function getExpiredInstructionsError(err) {
+            swal({
+                title: "נכשל!", text: "משיכת הדרכות פגות תוקף נכשלה", type:
+                    "warning", icon: "warning"
+            });
+        }
+
+        function getExpiredCertificates(today) {
+            let api = "../api/certificate?date=" + today;
+            ajaxCall("GET", api, "", getExpiredCertificatesSuccess, getExpiredCertificatesError);
+        }
+
+        function getExpiredCertificatesSuccess(certificatesList) {
+            expiredCertificates = certificatesList;
+            if (expiredCertificates.length > 0) {
+                let str = "<ul class='circle'>";
+                for (i = 0; i < expiredCertificates.length; i++) {
+                    if (i > 2)
+                        str += "<li class='hideMe'><a id='" + expiredCertificates[i].Certificate_num + "' onclick='renderCertificate(this.id)' href='#' >" + expiredCertificates[i].Type_name + " ל" + expiredCertificates[i].Company + "</a></li>";
+                    else
+                        str += "<li><a id='" + expiredCertificates[i].Certificate_num + "' onclick='renderCertificate(this.id)' href='#' >" + expiredCertificates[i].Type_name + " ל" + expiredCertificates[i].Company + "</a></li>";
+                }
+                str += "</ul>";
+                $("#certificates_expire_alerts").html(str);
+
+                if (expiredCertificates.length > 3) {
+                    $("#showCertificates").show();
+                    $(".hideMe").hide();
+                }
+                else $("#showCertificates").hide();
+            }
+            else {
+                $("#showCertificates").hide();
+                $("#certificates_expire_alerts").html("<ul class='circle'><li><strong>אין התראות</strong ></li></ul>");
+            }
+        }
+
+        function getExpiredCertificatesError(err) {
+            swal({
+                title: "נכשל!", text: "משיכת אישורים פגי תוקף נכשלה", type:
+                    "warning", icon: "warning"
+            });
+        }
+
+        function getReports() {
+
+            let api = "../api/report";
+            ajaxCall("GET", api, "", getReportsuccess, getError);
+        }
+
+        function getAlerts() {
+            let alert_type_num = 3;
+            let api = "../api/alert?user_email=" + user_email + "&alert_type_num=" + alert_type_num;
+            ajaxCall("GET", api, "", getAlertsSuccess, getError);
+        }
+
+        function getAlertsSuccess(data) {
+            alertList = data;
+            
+            if (alertList.length > 0) {
+                let str = "<ul class='circle'>";
+                for (i = 0; i < alertList.length; i++) {
+                    if (i > 2)
+                        str += "<li class='hideMe'><strong>" + alertList[i].Date.split("T")[0] + "</strong ><a id='" + alertList[i].Alert_num + "' href='#' onclick='renderDefectPic(this.id)'> " + alertList[i].Content.split(",")[0] + " " + alertList[i].Proj_name + " </a></li> ";
+                    else
+                        str += "<li><strong>" + alertList[i].Date.split("T")[0] + "</strong ><a id='" + alertList[i].Alert_num + "' href='#' onclick='renderDefectPic(this.id)'> " + alertList[i].Content.split(",")[0] + " " + alertList[i].Proj_name + " </a></li> ";
+                }
+
+                str += "</ul>";
+                $("#fixed_defects_photos_alerts").html(str);
+
+                if (alertList.length > 3) {
+                    $("#showPhotos").show();
+                    $(".hideMe").hide();
+                }
+                else $("#showPhotos").hide();
+            }
+            else {
+                $("#showPhotos").hide();
+                $("#fixed_defects_photos_alerts").html("<ul class='circle'><li><strong>אין התראות</strong ></li></ul>");
+            }
+        }
+
+        function showText(aTagId, currentDiv) {
+            
+            if (state == 'less') {
+                $('#' + currentDiv + ' .hideMe').show();
+                $('#' + aTagId).text("הראה פחות");
+                state = 'more';
+            }
+            else {
+                $('#' + currentDiv + ' .hideMe').hide();
+                $('#' + aTagId).text("הראה יותר");
+                state = 'less';
+            }
+                
+        }
+
+        function getReportsuccess(data) {
+            reportList = data;
+            console.log(reportList.length)
+            if (reportList.length > 0) {
+                let str = "<ul class='circle'>";
+                for (i = 0; i < reportList.length; i++) {
+                    if (i > 2)
+                        str += "<li class='hideMe'><strong>" + reportList[i].Date.split("T")[0] + "</strong ><a id='" + reportList[i].Report_num + "' href='#' onclick='showReportPage(this.id)'> בפרויקט " + reportList[i].Proj_name + " " + " דוח מספר " + reportList[i].Report_num + "</a></li> ";
+                    else
+                        str += "<li><strong>" + reportList[i].Date.split("T")[0] + "</strong ><a id='" + reportList[i].Report_num + "' href='#' onclick='showReportPage(this.id)'> בפרויקט " + reportList[i].Proj_name + " " + " דוח מספר " + reportList[i].Report_num + "</a></li> ";
+                }
+
+                str += "</ul>";
+                $("#reports_alerts").html(str);
+
+                if (reportList.length > 3) {
+                    $("#showReports").show();
+                    $(".hideMe").hide();
+                }
+                else $("#showReports").hide();
+            }
+            else {
+                $("#showReports").hide();
+                $("#reports_alerts").html("<ul class='circle'><li><strong>אין התראות</strong ></li></ul>");
+            }
+        }
+
+        function getError() {
+            swal("Failed!", "Failed to read alerts!Please try again", "warning")
+        }
+        function showReportPage(id) {
+            for (var i = 0; i < reportList.length; i++) {
+                if (reportList[i].Report_num == id) {
+                    localStorage["report"] = JSON.stringify(reportList[i]);
+                    let api = "../api/project?project_num=" + reportList[i].Project_num;
+                    ajaxCall("GET", api, "", moveToReport, getProjError);
+                   
+                }
+                document.getElementById('display_details').innerHTML += "<div class='reportPopUp'><h3>פרויקט:  " + reportList[i].Proj_name + "</h3><h3> דוח מספר: " + reportList[i].Report_num + "</h3><h3> בוצע בתאריך: " + reportList[i].Date.split("T")[0] + "</h3><h3> ציון הדוח הינו: " + reportList[i].Grade + "</h3></div>";
+
+            }
+        }
+
+        function moveToReport(data) {
+            localStorage["project"] = JSON.stringify(data);
+            window.location = "report.html";
+        }
+
+        function renderInstruction(id) {
+            document.getElementById('display_details').innerHTML = ""
+            document.getElementById('id04').style.display = 'block';
+            for (i = 0; i < expiredInstructions.length; i++) {
+                if (expiredInstructions[i].Instruction_num == id) {
+                    let str = "<h3>" + expiredInstructions[i].Type_name + " ל" + expiredInstructions[i].Company + "</h3>";
+                    str += "<table><tr><th>תאריך ביצוע הדרכה: </th><th>" + expiredInstructions[i].Date.split("T")[0] + "</th></tr>";
+                    str += "<tr><th>כתובת: </th><th>" + expiredInstructions[i].Address + "</th></tr>";
+                    str += "<tr><th>מספר משתתפים: </th><th>" + expiredInstructions[i].Participants_num + "</th></tr>";
+                    str += "<tr><th>סכום כולל: </th><th>" + expiredInstructions[i].Total_price + "</th></tr></table>";
+                    document.getElementById('display_details').innerHTML = str;
+                    break;
+                }
+            }
+        }
+
+        function renderCertificate(id) {
+            document.getElementById('display_details').innerHTML = ""
+            document.getElementById('id04').style.display = 'block';
+            for (i = 0; i < expiredCertificates.length; i++) {
+                if (expiredCertificates[i].Certificate_num == id) {
+                    let str = "<h3>" + expiredCertificates[i].Type_name + " ל" + expiredCertificates[i].Company + "</h3>";
+                    str += "<table><tr><th>תאריך הנפקת אישור: </th><th>" + expiredCertificates[i].Date.split("T")[0] + "</th></tr>";
+                    str += "<tr><th>כתובת: </th><th>" + expiredCertificates[i].Address + "</th></tr>";
+                    str += "<tr><th>עלות אישור: </th><th>" + expiredCertificates[i].Price + "</th></tr></table>";
+                    document.getElementById('display_details').innerHTML = str;
+                    break;
+                }
+            }
+        }
+
+        function renderDefectPic(alert_Num) {
+            alertNum = alert_Num;
+            $('.image').attr({
+                'src': ""
+            });
+            $('#mask').addClass('showing');
+            $('html').addClass('hide-scroll');
+            var id = '#dialog';
+            fullImagePath = "";
+            imagePath = "";
+            for (var i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_num == alertNum) {
+                    $('#alert_title').html(alertList[i].Content.split(",")[0]);
+                    fullImagePath = "../uploadedFiles/" + alertList[i].Content.split(",")[1];
+                    imagePath = alertList[i].Content.split(",")[1];
+                    projectNum = alertList[i].Proj_num;
+                    break;
+                }
+            }
+
+            $('.image').attr({
+                'src': fullImagePath
+            });
+
+            getProject();
+
+            //if close button is clicked
+            $('.window .close').click(function (e) {
+                ////Cancel the link behavior
+                e.preventDefault();
+                $('#mask').removeClass('showing');
+                $('html').removeClass('hide-scroll');
+            });
+        }
+
+        function getProject() {
+            let api = "../api/project?project_num=" + projectNum;
+            ajaxCall("GET", api, "", getProjSuccess, getProjError);
+        }
+
+        function getProjSuccess(proj) {
+            project = proj;
+            projContacts = [];
+            projContacts.push(project.Manager_email);
+            projContacts.push(project.Foreman_email);
+        }
+
+        function getProjError(err) {
+            project = "";
+        }
+
+
+        function updateDefectStatus() {
+            $('#mask').removeClass('showing');
+            $('html').removeClass('hide-scroll');
+            var fix_status = 1;
+            let api = "../api/defect_in_report?picture_link=" + imagePath + "&fix_status=" + fix_status;
+            ajaxCall("PUT", api, "", postAlertOnImg, updateDefectsInReportError);
+        }
+
+        function updateDefectsInReportError() {
+            swal({
+                title: "נכשל!", text: "סטטוס תיקון ליקוי לא עודכן!", type:
+                    "warning", icon: "warning"
+            });
+        }
+
+        function postAlertOnImg() {
+
+            if (project != null) {
+                for (var i = 0; i < projContacts.length; i++) {
+                    var now = new Date().toISOString();
+                    newAlertOnAprroveIMG = {
+                        Content: "תמונת תיקון ליקוי אושרה," + imagePath,
+                        Date: now,
+                        Alert_type_num: 3,
+                        User_email: projContacts[i],
+                        Status: 0,
+                        Proj_num: project.Project_num
+
+                    }
+                    let api = "../api/alert";
+                    ajaxCall("POST", api, JSON.stringify(newAlertOnAprroveIMG), PostAlertSuccess, PostAlertError)
+
+                }
+            }
+
+            else swal({
+                title: "התראה לאנשי הקשר לא נשלחה!", text: "הבאת פרטי פרויקט נכשלה", type:
+                    "warning", icon: "warning"
+            });
+        }
+
+        function defectNotApprove() {
+            if (project != "") {
+                var now = new Date().toISOString();
+                for (var i = 0; i < projContacts.length; i++) {
+                    newAlertOnAprroveIMG = {
+                        Content: "תמונת תיקון ליקוי לא אושרה," + imagePath,
+                        Date: now,
+                        Alert_type_num: 3,
+                        User_email: projContacts[i],
+                        Status: 0,
+                        Proj_num: project.Project_num
+
+                    }
+                    let api = "../api/alert";
+                    ajaxCall("POST", api, JSON.stringify(newAlertOnAprroveIMG), PostAlertSuccess, PostAlertError);
+                }
+            }
+
+            else swal({
+                title: "התראה לאנשי הקשר לא נשלחה!", text: "הבאת פרטי פרויקט נכשלה", type:
+                    "warning", icon: "warning"
+            });
+        }
+
+        function PostAlertSuccess() {
+            //move alert to archive
+            ChangeStatus(alertNum);
+        }
+
+        function PostAlertError(err) {
+            swal({
+                title: "סטטוס תיקון עודכן בהצלחה!", text: "שים לב! לא נשלחה התראה לאנשי הקשר", type:
+                    "warning", icon: "warning"
+            });
+        }
+
+        function ChangeStatus(id) {
+            for (var i = 0; i < alertList.length; i++) {
+                if (alertList[i].Alert_num == id) {
+                    update_status = {
+                        Alert_num: Number(id),
+                        Content: alertList[i].Content,
+                        Date: alertList[i].Date,
+                        Alert_type_num: alertList[i].Alert_type_num,
+                        User_email: alertList[i].User_email,
+                        Status: 1,
+                        Proj_num: alertList[i].Proj_num,
+                        Proj_name: alertList[i].Proj_name
+
+                    }
+                }
+            }
+
+            let api = "../api/alert";
+            ajaxCall("PUT", api, JSON.stringify(update_status), UpdateAlertStatusSuccess, UpdateAlertStatusError)
+        }
+        function UpdateAlertStatusSuccess() {
+            swal({
+                title: "סטטוס תיקון עודכן בהצלחה!", text: "נשלחה התראה לאנשי הקשר בפרויקט", type:
+                    "success", icon: "success"
+            }).then(function () {
+                location.reload();
+            });
+        }
+        function UpdateAlertStatusError() {
+            swal({
+                title: "עדכון סטטוס תיקון נכשל!", text: "נסה שוב מאוחר יותר", type:
+                    "warning", icon: "warning"
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem("user");
+            window.location = "login.html";
+        }
+
+
+    </script>
+</head>
+<body>
+    <div id="logo">
+        <img class="logo" src="photos/logo.jpeg" height="50" />
+        <button onclick="logout()" id="logout">התנתקות</button>
+    </div>
+    <div class="body-wrap">
+        <nav class="navbar navbar-inverse">
+            <div class="container1">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbarMenu" aria-expanded="false">
+                        <span id="navigation" class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse" id="navbarMenu">
+                    <ul class="nav navbar-nav navbar-right  bts-nav">
+                        <li><span class="glyphicon glyphicon-cog" aria-hidden="true"></span><a href="settings.html"></a></li>
+                        <li></li>
+                        <li class="nav-item">
+                            <span class="glyphicon glyphicon-bell" aria-hidden="true"></span><a href="alerts.html"></a>
+                        </li>
+                        <li><a href="users.html">משתמשים</a></li>
+                        <li><a href="orders.html">הזמנות</a></li>
+                        <li><a href="certificates.html">אישורים</a></li>
+                        <li><a href="instructions.html">הדרכות</a></li>
+                        <li><a href="projects.html">פרויקטים</a></li>
+                        <li class="nav-item" id="active">
+                            <span class="glyphicon glyphicon-home" aria-hidden="true"></span><a href="home.html"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <!--NavBar-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <div id="instruction_bar" dir="rtl">
+        <div id="headline">
+            <h1 class="instructions"> ברוך הבא דוד !</h1>
+        </div>
+        <br />
+    </div>
+    <div class="main">
+        <div class="col-lg-6 mb-3">
+            <div class="card" id="calendar">
+                <div class="card-body section1">
+                    <div class="row">
+                        <div class="form-group col-sm-12">
+                        </div>
+                    </div>
+                    <iframe src="https://calendar.google.com/calendar/embed?height=600&amp;wkst=1&amp;bgcolor=%235f9ea0&amp;ctz=Asia%2FJerusalem&amp;src=Z3Vsa29zYWZldHl1c2VyQGdtYWlsLmNvbQ&amp;src=aXcuamV3aXNoI2hvbGlkYXlAZ3JvdXAudi5jYWxlbmRhci5nb29nbGUuY29t&amp;color=%23039BE5&amp;color=%230B8043&amp;showNav=1&amp;showCalendars=0&amp;showTitle=0&amp;showDate=1&amp;showTz=0&amp;showTabs=1" style="border:10px solid cadetblue" width="100%" height="100%" frameborder="0" scrolling="no"></iframe>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-3">
+            <div class="card-body section2">
+
+                <div class="row">
+                    <h3>תמונות ליקויים שתוקנו</h3>
+                </div>
+                <div id="fixed_defects_photos_alerts">
+                </div>
+                <div>
+                    <a id="showPhotos" onclick="showText(this.id,'fixed_defects_photos_alerts')" href="#">הראה יותר</a>
+                </div>
+            </div>
+
+            <div class="card-body section2">
+
+                <div class="row">
+                    <h3>הדרכות העומדות לפוג בחודש הקרוב</h3>
+                </div>
+                <div id="instructions_expire_alerts">
+
+                </div>
+                <div>
+                    <a id="showInstructions" onclick="showText(this.id,'instructions_expire_alerts')" href="#">הראה יותר</a>
+                </div>
+            </div>
+
+            <div class="card-body section2">
+
+                <div class="row">
+                    <h3>אישורים העומדים לפוג בחודש הקרוב</h3>
+                </div>
+                <div id="certificates_expire_alerts">
+
+                </div>
+                <div>
+                    <a id="showCertificates" onclick="showText(this.id,'certificates_expire_alerts')" href="#">הראה יותר</a>
+                </div>
+            </div>
+
+            <div class="card-body section2">
+
+                <div class="row">
+                    <h3>דוחות ביקור אחרונים</h3>
+                </div>
+                <div id="reports_alerts">
+
+                </div>
+                <div>
+                    <a id="showReports" onclick="showText(this.id,'reports_alerts')" href="#">הראה יותר</a>
+                </div>
+            </div>
+            <div id="id04" class="w3-modal">
+                <div class="w3-modal-content">
+                    <div class="w3-container">
+                        <span onclick="document.getElementById('id04').style.display='none'" class="w3-button w3-display-topright">&times;</span>
+                        <div id="display_details"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="mask">
+                <div id="boxes">
+                    <div class="inner">
+                        <div id="dialog" class="window">
+                            <a href="#" class="close">x</a>
+                            <div id="showImg">
+                                <div id="popupfoot"> <img src="#" class="image" alt="Loading..." /> </div>
+                                <div id="approvePicBTNs">
+                                    <button class="btn btn-danger fixBTNs" onclick="defectNotApprove()">ליקוי לא תוקן</button>
+                                    <button class="btn btn-success fixBTNs" onclick="updateDefectStatus()">אשר תקינות ליקוי</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+   </div>
+
+</body>
+</html >
